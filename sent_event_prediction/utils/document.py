@@ -1,14 +1,19 @@
 """Document class for gigaword processed corpus."""
-from multichain.utils.entity import Entity
-from multichain.utils.event import Event
+import os
+import random
+import tarfile
+
+from sent_event_prediction.utils.entity import Entity
+from sent_event_prediction.utils.event import Event
 
 
-def _parse_document(text):
+def _parse_document(text, tokenized_dir=None):
     """Parse document.
 
     Refer to G&C16
 
     :param text: document content.
+    :param tokenized_dir: raw text directory
     :return: doc_id, entities, events
     """
     lines = [_.strip() for _ in text.splitlines()]
@@ -36,6 +41,15 @@ def _parse_document(text):
             #  however the code works well.
             #  Thus we do not check duplicate event temporally.
             events.append(cur_event)
+    # Read raw text if tokenized_dir is given
+    if tokenized_dir is not None:
+        raw_path = os.path.join(tokenized_dir, doc_id[:14].lower(), doc_id + ".txt")
+        with open(raw_path, "r") as f:
+            content = f.read().splitlines()
+        # Add corresponding sentence to each event
+        for event in events:
+            sent_id = event["verb_position"][0]
+            event["sent"] = content[sent_id]
     return doc_id, entities, events
 
 
@@ -48,13 +62,15 @@ class Document:
         self.events = events or []
 
     @classmethod
-    def from_text(cls, text):
+    def from_text(cls, text, tokenized_dir=None):
         """Initialize Document from text.
 
         :param text: document content
         :type text: str
+        :param tokenized_dir: raw text (tokenized) directory
+        :type tokenized_dir: str
         """
-        doc_id, entities, events = _parse_document(text)
+        doc_id, entities, events = _parse_document(text, tokenized_dir)
         return cls(doc_id, entities, events)
 
     def get_chain_for_entity(self, entity, end_pos=None):
@@ -135,11 +151,13 @@ class TestDocument(Document):
         self.target = target
 
     @classmethod
-    def from_text(cls, text):
+    def from_text(cls, text, tokenized_dir=None):
         """"Content should first be split into question part and document part.
 
         :param text: text to be processed.
         :type text: str
+        :param tokenized_dir: raw text directory
+        :type tokenized_dir: str
         """
         # Split lines
         lines = text.splitlines()
@@ -147,7 +165,7 @@ class TestDocument(Document):
         document_pos = lines.index("Document:")
         # Parse document part
         document_part = "\n".join(lines[document_pos+1:])
-        doc_id, entities, events = _parse_document(document_part)
+        doc_id, entities, events = _parse_document(document_part, tokenized_dir)
         # Parse question part
         question_part = "\n".join(lines[:document_pos])
         entity, context, choices, target = _parse_question(question_part, entities)
@@ -162,3 +180,45 @@ class TestDocument(Document):
         choices = [event.predicate_gr(self.entity) for event in self.choices]
         target = self.target
         return entity, context, choices, target
+
+
+def document_iterator(corp_dir,
+                      tokenized_dir=None,
+                      file_type="tar",
+                      doc_type="train",
+                      shuffle=False):
+    """Iterator of documents."""
+    # Check file_type
+    assert file_type in ["tar", "txt"], "Only accept tar/txt as file_type!"
+    # Check doc_type
+    assert doc_type in ["train", "test"], "Only accept train/test as doc_type!"
+    # Read file_list
+    fn_list = os.listdir(corp_dir)
+    if shuffle:
+        random.shuffle(fn_list)
+    fn_list = [fn for fn in fn_list if fn.endswith(file_type)]
+    if file_type == "txt":
+        for fn in fn_list:
+            fpath = os.path.join(corp_dir, fn)
+            with open(fpath, "r") as f:
+                content = f.read()
+            if doc_type == "train":
+                yield Document.from_text(content, tokenized_dir)
+            else:   # doc_type == "test"
+                yield TestDocument.from_text(content, tokenized_dir)
+    else:   # file_type == "tar"
+        for fn in fn_list:
+            fpath = os.path.join(corp_dir, fn)
+            with tarfile.open(fpath, "r") as f:
+                members = f.getmembers()
+                if shuffle:
+                    random.shuffle(members)
+                for member in members:
+                    content = f.extractfile(member).read().decode("utf-8")
+                    if doc_type == "train":
+                        yield Document.from_text(content, tokenized_dir)
+                    else:
+                        yield TestDocument.from_text(content, tokenized_dir)
+
+
+__all__ = ["Document", "TestDocument", "document_iterator"]

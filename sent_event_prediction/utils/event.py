@@ -1,8 +1,8 @@
 """Event class for gigaword processed document."""
 import re
 
-from multichain.utils.common import unescape
-from multichain.utils.entity import Entity
+from sent_event_prediction.utils.common import unescape
+from sent_event_prediction.utils.entity import Entity
 
 event_re = re.compile(r'(?P<verb>[^/]*) / (?P<verb_lemma>[^/]*) / '
                       r'verb_pos=\((?P<sentence_num>\d+),(?P<word_index>\d+)\) / '
@@ -32,6 +32,14 @@ def find_entity_by_id(s, entity_list):
         return unescape(s)
 
 
+def transform_entity(entity, verb_position):
+    """Transform entity/string into format we need."""
+    if isinstance(entity, str):
+        return {"head": entity, "mention": entity}
+    else:   # isinstance(entity, Entity)
+        return {"head": entity["head"], "mention": entity.find_mention_by_pos(verb_position)}
+
+
 class Event(dict):
     """Event class."""
     def __init__(self, **kwargs):
@@ -39,6 +47,31 @@ class Event(dict):
             if isinstance(kwargs[key], dict) and not isinstance(kwargs[key], Entity):
                 kwargs[key] = Entity(**kwargs[key])
         super(Event, self).__init__(**kwargs)
+
+    @property
+    def filter(self):
+        """In filtered format, an event is represented as follows:
+
+        event: {
+            sent: str,
+            verb_lemma: str,
+            verb_position: int,
+            subject: {head: str, mention: str}
+            object: {head: str, mention: str}
+            iobject: {head: str, mention: str}
+            iobject_prep: str
+        }
+        """
+        item = {
+            "sent": self["sent"],
+            "verb_lemma": self["verb_lemma"],
+            "verb_position": self["verb_position"][1],
+            "subject": transform_entity(self["subject"], self["verb_position"]),
+            "object": transform_entity(self["object"], self["verb_position"]),
+            "iobject": transform_entity(self["iobject"], self["verb_position"]),
+            "iobject_prep": self["iobject_prep"]
+        }
+        return item
 
     def __getattr__(self, item):
         return self[item]

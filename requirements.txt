@@ -1,0 +1,2 @@
+setuptools>=41.2.0
+tqdm>=4.59.0

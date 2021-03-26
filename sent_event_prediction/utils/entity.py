@@ -3,7 +3,7 @@ import os
 import re
 import string
 
-from multichain.utils.mention import Mention
+from sent_event_prediction.utils.mention import Mention
 
 
 # Punctuation regex

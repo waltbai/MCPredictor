@@ -1,7 +1,7 @@
 """Mention class for coreferenced entities."""
 import re
 
-from multichain.utils.common import unescape
+from sent_event_prediction.utils.common import unescape
 
 
 mention_re = re.compile(r"\((?P<char_start>\d+),(?P<char_end>\d+)\);"
