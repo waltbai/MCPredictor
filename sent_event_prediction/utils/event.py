@@ -35,7 +35,7 @@ def find_entity_by_id(s, entity_list):
 def transform_entity(entity, verb_position):
     """Transform entity/string into format we need."""
     if isinstance(entity, str):
-        return {"head": entity, "mention": entity}
+        return {"head": entity, "mention": entity, "entity": False}
     else:   # isinstance(entity, Entity)
         return {"head": entity["head"], "mention": entity.find_mention_by_pos(verb_position)}
 
@@ -56,9 +56,9 @@ class Event(dict):
             sent: str,
             verb_lemma: str,
             verb_position: int,
-            subject: {head: str, mention: str}
-            object: {head: str, mention: str}
-            iobject: {head: str, mention: str}
+            subject: {head: str, mention: str, entity: bool}
+            object: {head: str, mention: str, entity: bool}
+            iobject: {head: str, mention: str, entity: bool}
             iobject_prep: str
         }
         """
