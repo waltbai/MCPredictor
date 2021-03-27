@@ -122,9 +122,23 @@ def single_train(corp_dir,
                         part.append(sample)
                         if len(part) == part_size:
                             part_path = os.path.join(data_dir, "train.{}".format(part_id))
-                            with open(part_path) as f:
+                            with open(part_path, "wb") as f:
                                 pickle.dump(part, f)
                             part_id += 1
                             part = []
                 pbar.update(1)
         logger.info("Totally {} parts".format(part_id))
+
+
+def single_eval(corp_dir,
+                work_dir,
+                tokenized_dir,
+                file_type="txt"):
+    """Generate single chain evaluation set."""
+    for eval_mode in ["dev", "test"]:
+        data_path = os.path.join(work_dir, "single_{}.pkl".format(eval_mode))
+        if os.path.exists(data_path):
+            logger.info("{} already exists".format(data_path))
+        else:
+            # TODO
+            pass
