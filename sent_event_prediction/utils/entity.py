@@ -92,28 +92,16 @@ class Entity(dict):
     def find_mention_by_pos(self, verb_position):
         """Find mention by verb_position."""
         sent_id = verb_position[0]
-        mentions = [m["text"].lower().split() for m in self["mentions"] if m["sentence_num"] == sent_id]
-        mentions = [filter_words_in_mention(m) for m in mentions]
-        mentions = [m for m in mentions if len(m) > 0]
+        mentions = [m["text"] for m in self["mentions"] if m["sentence_num"] == sent_id]
         if len(mentions) == 0:
             return "None"
         else:
-            return " ".join(max(mentions, key=lambda x: len(x)))
+            return max(mentions, key=lambda x: len(x))
 
-    def find_mentions_by_pos(self, verb_position):
-        """Find mentions by verb_position."""
-        sent_id = verb_position[0]
-        mentions = [m["text"].lower().split() for m in self["mentions"] if m["sentence_num"] <= sent_id]
-        mentions = [filter_words_in_mention(m) for m in mentions]
-        mentions = [m for m in mentions if len(m) > 0]
-        mentions = [" ".join(m) for m in mentions]
-        # Filter replicate mentions
-        new_mentions = list(set(mentions))
-        if len(new_mentions) == 0:
-            return "None"
-        else:
-            new_mentions.sort(key=mentions.index)
-            return new_mentions
+    def find_longest_mention(self):
+        """Find longest mention."""
+        mentions = [m["text"] for m in self["mentions"]]
+        return max(mentions, key=lambda x: len(x))
 
     def clear_mentions(self):
         """Clear mentions field in order to save space during storing."""
@@ -160,4 +148,21 @@ class Entity(dict):
                    type=type_)
 
 
-__all__ = ["Entity", "filter_words_in_mention"]
+def transform_entity(entity, verb_position=None):
+    """Transform entity/str into json object."""
+    item = {}
+    if isinstance(entity, Entity):
+        item["head"] = entity["head"]
+        item["entity"] = int(entity["entity_id"][7:])
+        if verb_position is not None:
+            item["mention"] = entity.find_mention_by_pos(verb_position)
+        else:
+            item["mention"] = entity.find_longest_mention()
+    else:
+        item["head"] = entity
+        item["mention"] = entity
+        item["entity"] = -1
+    return item
+
+
+__all__ = ["Entity", "filter_words_in_mention", "transform_entity"]

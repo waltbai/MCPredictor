@@ -7,9 +7,9 @@ def parse_args():
     # Load config files
     parser = argparse.ArgumentParser(prog="SentEventPrediction")
     # Set basic arguments
-    parser.add_argument("--data_dir", default="/data/users/bl/data/gandc16",
+    parser.add_argument("--data_dir", default="/home/jinxiaolong/bl/data/gandc16",
                         type=str, help="MCNC corpus directory")
-    parser.add_argument("--work_dir", default="/data/users/bl/work_tmp",
+    parser.add_argument("--work_dir", default="/home/jinxiaolong/bl/data/sent_event_data",
                         type=str, help="Workspace directory")
     parser.add_argument("--device", default="cuda:0",
                         choices=["cpu", "cuda:0", "cuda:1", "cuda:2", "cuda:3"],
