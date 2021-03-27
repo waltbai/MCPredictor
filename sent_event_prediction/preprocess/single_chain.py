@@ -16,22 +16,22 @@ from sent_event_prediction.utils.event import transform_entity
 logger = logging.getLogger(__name__)
 
 
+def replace_argument(event, role, new_arg):
+    """Replace argument in the event."""
+    # Replace mention in sentence
+    old_arg = event[role]
+    # Use lower case in case model judge by the first letter.
+    event["sent"] = event["sent"].replace(old_arg["mention"], new_arg["mention"]).lower()
+    # Replace argument
+    event[role] = new_arg
+
+
 def negative_sampling(neg_pool,
                       positive_event,
                       protagonist,
                       non_protagonist_entities,
                       num=4):
     """Sample negative events for a chain."""
-
-    def replace_argument(event, role, _new_arg):
-        """Replace argument in the event."""
-        # Replace mention in sentence
-        old_arg = event[role]
-        # Use lower case in case model judge by the first letter.
-        event["sent"] = event["sent"].replace(old_arg["mention"], _new_arg["mention"]).lower()
-        # Replace argument
-        event[role] = _new_arg
-
     neg_events = []
     for _ in range(num):
         neg_event = random.choice(neg_pool)
@@ -118,7 +118,7 @@ def single_train(corp_dir,
                         random.shuffle(choices)
                         target = choices.index(answer)
                         # Generate sample
-                        sample = [context, choices, target]
+                        sample = [p, context, choices, target]
                         part.append(sample)
                         if len(part) == part_size:
                             part_path = os.path.join(data_dir, "train.{}".format(part_id))
@@ -127,7 +127,7 @@ def single_train(corp_dir,
                             part_id += 1
                             part = []
                 pbar.update(1)
-        logger.info("Totally {} parts".format(part_id))
+        logger.info("train set saved. Totally {} parts".format(part_id))
 
 
 def single_eval(corp_dir,
@@ -140,5 +140,33 @@ def single_eval(corp_dir,
         if os.path.exists(data_path):
             logger.info("{} already exists".format(data_path))
         else:
-            # TODO
-            pass
+            eval_set = []
+            with tqdm() as pbar:
+                for doc in document_iterator(corp_dir=corp_dir,
+                                             tokenized_dir=tokenized_dir,
+                                             file_type=file_type,
+                                             doc_type="eval"):
+                    protagonist = doc.entity
+                    context = doc.context
+                    choices = doc.choices
+                    target = doc.target
+                    # Transform protagonist
+                    verb_position = choices[target]["verb_position"]
+                    protagonist = transform_entity(protagonist, verb_position)
+                    context = [e.filter for e in context]
+                    # Assume each choice appear in the same position,
+                    # thus they use the same mention of protagonist.
+                    for e in choices:
+                        e["verb_position"] = verb_position
+                    # TODO: there is a problem:
+                    #  there is no corresponding sentence for negative samples in evaluation set!
+                    #  Unless we re-sample negative events.
+                    choices = [e.filter for e in choices]
+                    eval_set.append([protagonist, context, choices, target])
+                    pbar.update(1)
+            with open(data_path, "wb") as f:
+                pickle.dump(eval_set, f)
+            logger.info("{} set saved".format(eval_mode))
+
+
+

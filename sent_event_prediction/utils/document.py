@@ -191,7 +191,7 @@ def document_iterator(corp_dir,
     # Check file_type
     assert file_type in ["tar", "txt"], "Only accept tar/txt as file_type!"
     # Check doc_type
-    assert doc_type in ["train", "test"], "Only accept train/test as doc_type!"
+    assert doc_type in ["train", "eval"], "Only accept train/eval as doc_type!"
     # Read file_list
     fn_list = os.listdir(corp_dir)
     if shuffle:
@@ -204,7 +204,7 @@ def document_iterator(corp_dir,
                 content = f.read()
             if doc_type == "train":
                 yield Document.from_text(content, tokenized_dir)
-            else:   # doc_type == "test"
+            else:   # doc_type == "eval"
                 yield TestDocument.from_text(content, tokenized_dir)
     else:   # file_type == "tar"
         for fn in fn_list:
