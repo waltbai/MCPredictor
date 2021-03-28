@@ -59,7 +59,7 @@ def negative_sampling(neg_pool,
 def single_train(corp_dir,
                  work_dir,
                  tokenized_dir,
-                 part_size=100000,
+                 part_size=200000,
                  file_type="tar",
                  context_size=8):
     """Generate single chain train set.
