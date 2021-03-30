@@ -55,7 +55,6 @@ class Event(dict):
         }
         """
         item = {
-            "sent": self["sent"],
             "verb_lemma": self["verb_lemma"],
             "verb_position": self["verb_position"],
             "subject": transform_entity(self["subject"], self["verb_position"]),
@@ -63,6 +62,9 @@ class Event(dict):
             "iobject": transform_entity(self["iobject"], self["verb_position"]),
             "iobject_prep": self["iobject_prep"]
         }
+        # For negative events, they have no corresponding sentences.
+        if "sent" in self:
+            item["sent"] = self["sent"]
         return item
 
     def __getattr__(self, item):

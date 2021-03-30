@@ -118,11 +118,13 @@ class Document:
         return result
 
 
-def _parse_question(text, entities):
+def _parse_question(text, entities, doc_id, tokenized_dir=None):
     """Parse question.
 
     :param text: question text
     :param entities: entity list of the document
+    :param doc_id: document id
+    :param tokenized_dir: raw text directory
     :return: entity, context, choices, target
     """
     lines = text.splitlines()
@@ -133,6 +135,15 @@ def _parse_question(text, entities):
     entity = entities[int(lines[entity_pos + 1])]
     context = [Event.from_text(e, entities)
                for e in lines[context_pos + 1:choices_pos - 1] if e]
+    # Read raw text if tokenized_dir is given
+    if tokenized_dir is not None:
+        raw_path = os.path.join(tokenized_dir, doc_id[:14].lower(), doc_id + ".txt")
+        with open(raw_path, "r") as f:
+            content = f.read().splitlines()
+        # Add corresponding sentence to each event
+        for event in context:
+            sent_id = event["verb_position"][0]
+            event["sent"] = content[sent_id]
     choices = [Event.from_text(e, entities)
                for e in lines[choices_pos + 1:target_pos - 1] if e]
     target = int(lines[target_pos + 1])
@@ -168,7 +179,7 @@ class TestDocument(Document):
         doc_id, entities, events = _parse_document(document_part, tokenized_dir)
         # Parse question part
         question_part = "\n".join(lines[:document_pos])
-        entity, context, choices, target = _parse_question(question_part, entities)
+        entity, context, choices, target = _parse_question(question_part, entities, doc_id, tokenized_dir)
         return cls(doc_id, entities, events, entity, context, choices, target)
 
     def get_question(self):

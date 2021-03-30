@@ -133,40 +133,38 @@ def single_train(corp_dir,
 def single_eval(corp_dir,
                 work_dir,
                 tokenized_dir,
+                eval_mode="dev",
                 file_type="txt"):
     """Generate single chain evaluation set."""
-    for eval_mode in ["dev", "test"]:
-        data_path = os.path.join(work_dir, "single_{}.pkl".format(eval_mode))
-        if os.path.exists(data_path):
-            logger.info("{} already exists".format(data_path))
-        else:
-            eval_set = []
-            with tqdm() as pbar:
-                for doc in document_iterator(corp_dir=corp_dir,
-                                             tokenized_dir=tokenized_dir,
-                                             file_type=file_type,
-                                             doc_type="eval"):
-                    protagonist = doc.entity
-                    context = doc.context
-                    choices = doc.choices
-                    target = doc.target
-                    # Transform protagonist
-                    verb_position = choices[target]["verb_position"]
-                    protagonist = transform_entity(protagonist, verb_position)
-                    context = [e.filter for e in context]
-                    # Assume each choice appear in the same position,
-                    # thus they use the same mention of protagonist.
-                    for e in choices:
-                        e["verb_position"] = verb_position
-                    # TODO: there is a problem:
-                    #  there is no corresponding sentence for negative samples in evaluation set!
-                    #  Unless we re-sample negative events.
-                    choices = [e.filter for e in choices]
-                    eval_set.append([protagonist, context, choices, target])
-                    pbar.update(1)
-            with open(data_path, "wb") as f:
-                pickle.dump(eval_set, f)
-            logger.info("{} set saved".format(eval_mode))
-
-
-
+    data_path = os.path.join(work_dir, "single_{}.pkl".format(eval_mode))
+    if os.path.exists(data_path):
+        logger.info("{} already exists".format(data_path))
+    else:
+        eval_set = []
+        with tqdm() as pbar:
+            for doc in document_iterator(corp_dir=corp_dir,
+                                         tokenized_dir=tokenized_dir,
+                                         file_type=file_type,
+                                         doc_type="eval"):
+                protagonist = doc.entity
+                context = doc.context
+                choices = doc.choices
+                target = doc.target
+                # Transform protagonist
+                verb_position = choices[target]["verb_position"]
+                protagonist = transform_entity(protagonist, verb_position)
+                context = [e.filter for e in context]
+                pprint(context)
+                # Assume each choice appear in the same position,
+                # thus they use the same mention of protagonist.
+                for e in choices:
+                    e["verb_position"] = verb_position
+                # TODO: there is a problem:
+                #  there is no corresponding sentence for negative samples in evaluation set!
+                #  Unless we re-sample negative events.
+                choices = [e.filter for e in choices]
+                eval_set.append([protagonist, context, choices, target])
+                pbar.update(1)
+        with open(data_path, "wb") as f:
+            pickle.dump(eval_set, f)
+        logger.info("{} set saved".format(eval_mode))
