@@ -1,2 +1,4 @@
 setuptools>=41.2.0
 tqdm>=4.59.0
+torch>=1.7.1
+transformers>=3.5.1
