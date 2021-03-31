@@ -1,5 +1,7 @@
 from torch import nn
 
+from sent_event_prediction.models.base.embedding import build_embedding
+from sent_event_prediction.models.base.event_encoder import build_event_encoder
 from sent_event_prediction.models.base.sentence_encoder import build_sent_encoder
 
 
@@ -11,9 +13,11 @@ class SCPredictor(nn.Module):
     A constraint is applied between events and sentences to force their representation to be similar.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, pretrain_embedding=None):
         super(SCPredictor, self).__init__()
         self.config = config
+        self.embedding = build_embedding(config, pretrain_embedding)
+        self.event_encoder = build_event_encoder(config)
         self.sent_encoder = build_sent_encoder(config)
 
     def forward(self, events, sents=None, sent_mask=None, target=None):
@@ -28,6 +32,7 @@ class SCPredictor(nn.Module):
         :param target:
         """
         # Event encoding
+
         # Sentence encoding
         if sents is not None:
             sent_repr = self.sent_encoding(sents, sent_mask)
