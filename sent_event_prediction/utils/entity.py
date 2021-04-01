@@ -48,7 +48,7 @@ def get_head_word(mentions):
     entity_head_words = set()
     for mention in mentions:
         # Get head word from mention
-        mention_head = mention.get_head_word()
+        mention_head = mention["head"]
         # Remove punctuation
         mention_head = punct_re.sub(" ", mention_head)
         # Split words
@@ -139,13 +139,14 @@ class Entity(dict):
         else:
             type_ = "misc"
         return cls(entity_id=entity_id,
-                   category=category,
-                   gender=gender,
-                   gender_prob=gender_prob,
-                   number=number,
-                   number_prob=number_prob,
+                   # category=category,
+                   # gender=gender,
+                   # gender_prob=gender_prob,
+                   # number=number,
+                   # number_prob=number_prob,
                    mentions=mentions,
-                   type=type_)
+                   # type=type_
+                   )
 
 
 def transform_entity(entity, verb_position=None):

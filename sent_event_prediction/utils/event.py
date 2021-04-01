@@ -142,13 +142,17 @@ class Event(dict):
                 self[key] = __new
 
     @classmethod
-    def from_text(cls, text, entities):
+    def from_text(cls, text, entities, doc_text=None, sent_len=50):
         """Construct Event object from text.
 
         :param text: text to be parsed.
         :type text: str
         :param entities: entity list from document
         :type entities: list[Entity]
+        :param doc_text: document text
+        :type doc_text: list[str]
+        :param sent_len: max sentence length
+        :type sent_len: int
         """
         result = event_re.match(text)
         groups = result.groupdict()
@@ -169,14 +173,18 @@ class Event(dict):
             parts = groups["iobj"].split(",")
             iobject_prep = parts[0]
             iobject = find_entity_by_id(parts[1], entities)
+        # Get sentence
+        sent = doc_text[verb_position[0]]
         return cls(verb=verb,
                    verb_lemma=verb_lemma,
                    verb_position=verb_position,
-                   type=type,
+                   # type=type,
                    subject=subject,
                    object=object,
                    iobject_prep=iobject_prep,
-                   iobject=iobject)
+                   iobject=iobject,
+                   sent=sent
+                   )
 
 
 __all__ = ["Event", "transform_entity"]

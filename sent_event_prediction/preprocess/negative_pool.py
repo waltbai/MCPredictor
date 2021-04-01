@@ -7,16 +7,16 @@ import random
 from tqdm import tqdm
 
 from sent_event_prediction.utils.document import document_iterator
-
+from sent_event_prediction.utils.entity import Entity
 
 logger = logging.getLogger(__name__)
 
 
 def entity_check(event):
     """Check if the given event contains an entity."""
-    return event["subject"]["entity"] >= 0 or \
-        event["object"]["entity"] >= 0 or \
-        event["iobject"]["entity"] >= 0
+    return isinstance(event["subject"], Entity) or \
+        isinstance(event["object"], Entity) or \
+        isinstance(event["iobject"], Entity)
 
 
 def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000):

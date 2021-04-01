@@ -26,9 +26,10 @@ class Mention(dict):
 
     def get_head_word(self):
         """Return head word of this mention in lower case."""
-        char_start = self["char_span"][0]
-        head_start, head_end = self["head_span"]
-        return self["text"][head_start-char_start:head_end-char_start].lower()
+        # char_start = self["char_span"][0]
+        # head_start, head_end = self["head_span"]
+        # return self["text"][head_start-char_start:head_end-char_start].lower()
+        return self["head"]
 
     @classmethod
     def from_text(cls, text):
@@ -51,13 +52,18 @@ class Mention(dict):
         nps_in_sentence = int(groups["nps_in_sentence"])
         sentence_num = int(groups["sentence_num"])
         head_span = (int(groups["head_start"]), int(groups["head_end"]))
-        return cls(char_span=char_span,
-                   text=text,
-                   np_sentence_position=np_sentence_position,
-                   np_doc_position=np_doc_position,
-                   nps_in_sentence=nps_in_sentence,
-                   sentence_num=sentence_num,
-                   head_span=head_span)
+        # Get head
+        char_start = char_span[0]
+        head_start, head_end = head_span
+        head = text[head_start-char_start:head_end-char_start].lower()
+        # return cls(char_span=char_span,
+        #            text=text,
+        #            np_sentence_position=np_sentence_position,
+        #            np_doc_position=np_doc_position,
+        #            nps_in_sentence=nps_in_sentence,
+        #            sentence_num=sentence_num,
+        #            head_span=head_span)
+        return cls(text=text, sentence_num=sentence_num, head=head)
 
 
 __all__ = ["Mention"]

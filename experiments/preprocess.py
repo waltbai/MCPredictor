@@ -3,7 +3,7 @@ import logging
 import os
 
 from sent_event_prediction.preprocess.negative_pool import generate_negative_pool
-from sent_event_prediction.preprocess.single_chain import single_train, single_eval
+from sent_event_prediction.preprocess.single_chain_old import single_train, single_eval
 from sent_event_prediction.preprocess.stop_event import count_stop_event
 from sent_event_prediction.utils.config import CONFIG
 
