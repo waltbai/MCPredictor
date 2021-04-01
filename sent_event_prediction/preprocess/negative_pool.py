@@ -31,7 +31,7 @@ def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000)
                 if len(neg_pool) >= num_events:
                     break
                 else:
-                    events = [e.filter for e in doc.events]
+                    events = [e for e in doc.events]
                     # If event less than 10, pick all events,
                     # else randomly pick 10 events from event list.
                     # Notice: all events should have

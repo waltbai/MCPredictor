@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from sent_event_prediction.preprocess.negative_pool import load_negative_pool
 from sent_event_prediction.preprocess.stop_event import load_stop_event
+from sent_event_prediction.preprocess.word_dict import load_word_dict
 from sent_event_prediction.utils.document import document_iterator
 from sent_event_prediction.utils.event import transform_entity
 
@@ -56,6 +57,20 @@ def negative_sampling(neg_pool,
     return neg_events
 
 
+def make_sample(protagonist, context, choices, target, word_dict, tokenizer):
+    """Make sample."""
+    sample = []
+    for choice in choices:
+        seq = context + [choice]
+        for e in seq:
+            sent = e["sent"].split()
+            verb_position = e["verb_position"][1]
+            # Add tag before and after verb
+            sent = sent[:verb_position-1] + [""]
+            if len(sent) > 50:
+                verb_position = e["verb_position"]
+
+
 def single_train(corp_dir,
                  work_dir,
                  tokenized_dir,
@@ -82,6 +97,8 @@ def single_train(corp_dir,
         stoplist = load_stop_event(work_dir)
         # Load negative pool
         neg_pool = load_negative_pool(work_dir)
+        # Load word dictionary
+        word_dict = load_word_dict(work_dir)
         # Make sub directory
         os.makedirs(data_dir)
         part = []
