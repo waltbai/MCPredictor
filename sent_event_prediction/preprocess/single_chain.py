@@ -79,18 +79,25 @@ def make_sample(protagonist,
                 # role_dict,
                 tokenizer):
     """Make sample."""
-    sample = []
+    events = []
+    sents = []
     for choice in choices:
         chain = context + [choice]
-        events = []
-        sents = []
+        chain_events = []
+        chain_sent = []
         for event in chain:
             verb, subj, obj, iobj, role = event.tuple(protagonist)
-            sent = event.tagged_sent(role)
-            print(event)
-            print(sent)
-            input()
-    return sample
+            # Convert event
+            predicate_gr = "{}:{}".format(verb, role)
+            tmp = [predicate_gr, subj, obj, iobj]
+            tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
+            chain_events.append(tmp)
+            # Convert sentence
+            chain_sent = event.tagged_sent(role)
+            # TODO
+        events.append(chain_events)
+        sents.append(chain_sent)
+    return events, sents, target
 
 
 def generate_single_train(corp_dir,
