@@ -156,6 +156,17 @@ class Event(dict):
         self["sent"] = " ".join(new_sent)
         self["verb_position"] = [self["verb_position"][0], token_index]
 
+    def tagged_sent(self, role):
+        """Tag verb role of the sentence."""
+        sent = self["sent"].split()
+        if role not in ["subj", "obj"]:
+            role = "iobj"
+        verb_index = self["verb_position"][1]
+        sent = sent[:verb_index] + \
+            ["[{}]".format(role)] + [sent[verb_index]] + ["[{}]".format(role)] + \
+            sent[verb_index+1:]
+        return " ".join(sent)
+
     def replace_argument(self, __old, __new):
         """Replace an argument with a new one."""
         for key in ["subject", "object", "iobject"]:

@@ -5,6 +5,7 @@ import random
 from copy import copy
 
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
 from sent_event_prediction.preprocess.negative_pool import load_negative_pool
 from sent_event_prediction.preprocess.stop_event import load_stop_event
@@ -66,11 +67,30 @@ def negative_sampling(positive_event,
             negative_event.replace_mention(old_mention, new_mention)
             # Replace entity
             negative_event.replace_argument(old_ent, new_ent)
-        print(event)
-        print(negative_event)
-        input()
         negative_events.append(negative_event)
     return negative_events
+
+
+def make_sample(protagonist,
+                context,
+                choices,
+                target,
+                word_dict,
+                # role_dict,
+                tokenizer):
+    """Make sample."""
+    sample = []
+    for choice in choices:
+        chain = context + [choice]
+        events = []
+        sents = []
+        for event in chain:
+            verb, subj, obj, iobj, role = event.tuple(protagonist)
+            sent = event.tagged_sent(role)
+            print(event)
+            print(sent)
+            input()
+    return sample
 
 
 def generate_single_train(corp_dir,
@@ -78,7 +98,8 @@ def generate_single_train(corp_dir,
                           tokenized_dir,
                           part_size=200000,
                           file_type="tar",
-                          context_size=8):
+                          context_size=8,
+                          overwrite=False):
     """Generate single chain train data.
 
     :param corp_dir: train corpus directory
@@ -87,10 +108,11 @@ def generate_single_train(corp_dir,
     :param part_size: size of each partition
     :param file_type: "tar" or "txt"
     :param context_size: length of the context chain
+    :param overwrite: whether to overwrite old data
     """
     # All parts of the dataset will be store in a sub directory.
     data_dir = os.path.join(work_dir, "single_train")
-    if os.path.exists(data_dir):
+    if os.path.exists(data_dir) and not overwrite:
         logger.info("{} already exists.".format(data_dir))
     else:
         # Load stop list
@@ -98,9 +120,11 @@ def generate_single_train(corp_dir,
         # Load negative pool
         neg_pool = load_negative_pool(work_dir)
         # Load word dictionary
-        word_dict = load_word_dict(work_dir)
+        # word_dict = load_word_dict(work_dir)
+        # Load tokenizer
+        tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
         # Make sub directory
-        os.makedirs(data_dir)
+        os.makedirs(data_dir, exist_ok=True)
         partition = []
         partition_id = 0
         with tqdm() as pbar:
@@ -119,13 +143,24 @@ def generate_single_train(corp_dir,
                     for begin, end in zip(range(n), range(8, n)):
                         context = chain[begin:end]
                         answer = chain[end]
+                        # Negative sampling
                         neg_choices = negative_sampling(positive_event=answer,
                                                         negative_pool=neg_pool,
                                                         protagonist=protagonist,
                                                         non_protagonist_entities=non_protagonist_entities)
+                        # Make choices
+                        choices = [answer] + neg_choices
+                        random.shuffle(choices)
+                        target = choices.index(answer)
+                        # Make sample
+                        sample = make_sample(protagonist=protagonist,
+                                             context=context,
+                                             choices=choices,
+                                             target=target,
+                                             word_dict=None,
+                                             tokenizer=tokenizer)
+
                 pbar.update(1)
-
-
 
 
 def generate_single_eval():

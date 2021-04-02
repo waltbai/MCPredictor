@@ -23,7 +23,8 @@ if __name__ == "__main__":
                            )
     generate_single_train(corp_dir=corp_dir,
                           work_dir=work_dir,
-                          tokenized_dir=tokenize_dir)
+                          tokenized_dir=tokenize_dir,
+                          overwrite=True)
     # dev_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "dev_10k")
     # single_eval(corp_dir=dev_corp_dir,
     #             work_dir=work_dir,
