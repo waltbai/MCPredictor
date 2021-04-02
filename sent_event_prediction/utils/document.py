@@ -27,11 +27,18 @@ def _parse_document(text, tokenized_dir=None):
     for line in lines[entity_pos + 1:event_pos]:
         if line:
             entities.append(Entity.from_text(line))
+    # Read raw text if tokenized_dir is given
+    if tokenized_dir is not None:
+        raw_path = os.path.join(tokenized_dir, doc_id[:14].lower(), doc_id + ".txt")
+        with open(raw_path, "r") as f:
+            content = f.read().splitlines()
+    else:
+        content = None
     # Add events
     events = []
     for line in lines[event_pos + 1:]:
         if line:
-            cur_event = Event.from_text(line, entities)
+            cur_event = Event.from_text(line, entities, doc_text=content)
             # Check if current event is duplicate.
             # Since events are sorted by verb_pos,
             # we only need to look back one event.
@@ -41,15 +48,6 @@ def _parse_document(text, tokenized_dir=None):
             #  however the code works well.
             #  Thus we do not check duplicate event temporally.
             events.append(cur_event)
-    # Read raw text if tokenized_dir is given
-    if tokenized_dir is not None:
-        raw_path = os.path.join(tokenized_dir, doc_id[:14].lower(), doc_id + ".txt")
-        with open(raw_path, "r") as f:
-            content = f.read().splitlines()
-        # Add corresponding sentence to each event
-        for event in events:
-            sent_id = event["verb_position"][0]
-            event["sent"] = content[sent_id]
     return doc_id, entities, events
 
 

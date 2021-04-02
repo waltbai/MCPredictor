@@ -67,6 +67,12 @@ class Event(dict):
             item["sent"] = self["sent"]
         return item
 
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
     def __getattr__(self, item):
         return self[item]
 
@@ -134,6 +140,21 @@ class Event(dict):
             if isinstance(self[key], Entity):
                 entities.append(self[key])
         return entities
+
+    def replace_mention(self, __old: str, __new: str):
+        """Replace mention in sentence."""
+        # After replacement, verb position will changed
+        token_index = self["verb_position"][1]
+        sent = self["sent"].split()
+        before_verb = " ".join(sent[:token_index])
+        verb = sent[token_index]
+        after_verb = " ".join(sent[token_index+1:])
+        before_verb = before_verb.replace(__old, __new).split()
+        after_verb = after_verb.replace(__old, __new).split()
+        new_sent = before_verb + [verb] + after_verb
+        token_index = len(before_verb)
+        self["sent"] = " ".join(new_sent)
+        self["verb_position"] = [self["verb_position"][0], token_index]
 
     def replace_argument(self, __old, __new):
         """Replace an argument with a new one."""

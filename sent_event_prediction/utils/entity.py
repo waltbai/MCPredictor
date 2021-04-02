@@ -83,6 +83,12 @@ class Entity(dict):
         kwargs.setdefault("head", get_head_word(mentions))
         super(Entity, self).__init__(**kwargs)
 
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
     def __getattr__(self, item):
         return self[item]
 

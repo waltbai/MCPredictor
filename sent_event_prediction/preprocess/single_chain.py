@@ -42,23 +42,35 @@ def negative_sampling(positive_event,
         negative_event = random.choice(negative_pool)
         while negative_event["verb_lemma"] == positive_event["verb_lemma"]:
             negative_event = random.choice(negative_pool)
+        event = negative_event
         negative_event = copy(negative_event)
         # Assign entity mapping
         negative_entities = negative_event.get_entities()
         negative_protagonist = random.choice(negative_entities)
-        negative_non_protagonist = [e for e in negative_entities if e is not negative_protagonist]
-        replace_non_protagonist = []
-        for e in negative_non_protagonist:
-            if len(non_protagonist_entities) > 0:
-                replace_non_protagonist.append(random.choice(non_protagonist_entities))
+        # Replace mention and argument
+        for old_ent in negative_entities:
+            if old_ent is not negative_protagonist:
+                # Select new entity
+                if len(non_protagonist_entities) > 0:
+                    new_ent = random.choice(non_protagonist_entities)
+                else:
+                    new_ent = old_ent
             else:
-                replace_non_protagonist.append(e)
-        # Replace mention in sentence
-        # Replace entity
-        negative_event.replace_entity(negative_protagonist, protagonist)
-        for neg, rep in zip(negative_non_protagonist, replace_non_protagonist):
-            negative_event.replace_entity(neg, rep)
-
+                new_ent = protagonist
+            # Replace mention and change verb_position
+            old_mention = old_ent.find_mention_by_pos(negative_event["verb_position"])
+            if new_ent is protagonist:
+                new_mention = new_ent.find_mention_by_pos(positive_event["verb_position"])
+            else:
+                new_mention = new_ent.find_longest_mention()
+            negative_event.replace_mention(old_mention, new_mention)
+            # Replace entity
+            negative_event.replace_argument(old_ent, new_ent)
+        print(event)
+        print(negative_event)
+        input()
+        negative_events.append(negative_event)
+    return negative_events
 
 
 def generate_single_train(corp_dir,
@@ -103,6 +115,15 @@ def generate_single_train(corp_dir,
                     # Get non protagonist entities
                     non_protagonist_entities = doc.non_protagonist_entities(protagonist)
                     # Make sample
+                    n = len(chain)
+                    for begin, end in zip(range(n), range(8, n)):
+                        context = chain[begin:end]
+                        answer = chain[end]
+                        neg_choices = negative_sampling(positive_event=answer,
+                                                        negative_pool=neg_pool,
+                                                        protagonist=protagonist,
+                                                        non_protagonist_entities=non_protagonist_entities)
+                pbar.update(1)
 
 
 

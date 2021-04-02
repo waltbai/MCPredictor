@@ -3,7 +3,7 @@ import logging
 import os
 
 from sent_event_prediction.preprocess.negative_pool import generate_negative_pool
-from sent_event_prediction.preprocess.single_chain_old import single_train, single_eval
+from sent_event_prediction.preprocess.single_chain import generate_single_train
 from sent_event_prediction.preprocess.stop_event import count_stop_event
 from sent_event_prediction.utils.config import CONFIG
 
@@ -21,16 +21,16 @@ if __name__ == "__main__":
                            work_dir=work_dir,
                            # num_events=100
                            )
-    single_train(corp_dir=corp_dir,
-                 work_dir=work_dir,
-                 tokenized_dir=tokenize_dir)
-    dev_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "dev_10k")
-    single_eval(corp_dir=dev_corp_dir,
-                work_dir=work_dir,
-                tokenized_dir=tokenize_dir,
-                eval_mode="dev")
-    test_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "test_10k")
-    single_eval(corp_dir=test_corp_dir,
-                work_dir=work_dir,
-                tokenized_dir=tokenize_dir,
-                eval_mode="test")
+    generate_single_train(corp_dir=corp_dir,
+                          work_dir=work_dir,
+                          tokenized_dir=tokenize_dir)
+    # dev_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "dev_10k")
+    # single_eval(corp_dir=dev_corp_dir,
+    #             work_dir=work_dir,
+    #             tokenized_dir=tokenize_dir,
+    #             eval_mode="dev")
+    # test_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "test_10k")
+    # single_eval(corp_dir=test_corp_dir,
+    #             work_dir=work_dir,
+    #             tokenized_dir=tokenize_dir,
+    #             eval_mode="test")

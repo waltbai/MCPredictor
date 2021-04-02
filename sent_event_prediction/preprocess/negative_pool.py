@@ -1,4 +1,5 @@
 """Generate negative event pool."""
+import json
 import logging
 import os
 import pickle
@@ -8,6 +9,7 @@ from tqdm import tqdm
 
 from sent_event_prediction.utils.document import document_iterator
 from sent_event_prediction.utils.entity import Entity
+from sent_event_prediction.utils.event import Event
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ def entity_check(event):
 
 def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000):
     """Sample a number of negative events."""
-    neg_pool_path = os.path.join(work_dir, "negative_pool.pkl")
+    neg_pool_path = os.path.join(work_dir, "negative_pool.json")
     if os.path.exists(neg_pool_path):
         logger.info("{} already exists".format(neg_pool_path))
     else:
@@ -31,7 +33,8 @@ def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000)
                 if len(neg_pool) >= num_events:
                     break
                 else:
-                    events = [e for e in doc.events]
+                    # events = [e for e in doc.events]
+                    events = doc.events
                     # If event less than 10, pick all events,
                     # else randomly pick 10 events from event list.
                     # Notice: all events should have
@@ -44,16 +47,17 @@ def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000)
                     if len(neg_pool) > num_events:
                         neg_pool = neg_pool[:num_events]
                 pbar.update(1)
-        with open(neg_pool_path, "wb") as f:
-            pickle.dump(neg_pool, f)
+        with open(neg_pool_path, "w") as f:
+            json.dump(neg_pool, f)
         logger.info("Save negative pool to {}".format(neg_pool_path))
 
 
 def load_negative_pool(work_dir):
     """Load negative event pool."""
-    neg_pool_path = os.path.join(work_dir, "negative_pool.pkl")
-    with open(neg_pool_path, "rb") as f:
-        neg_pool = pickle.load(f)
+    neg_pool_path = os.path.join(work_dir, "negative_pool.json")
+    with open(neg_pool_path, "r") as f:
+        neg_pool = json.load(f)
+    neg_pool = [Event(**e) for e in neg_pool]
     return neg_pool
 
 
