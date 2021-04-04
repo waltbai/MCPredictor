@@ -1,6 +1,7 @@
 """Generate single chain data."""
 import logging
 import os
+import pickle
 import random
 from copy import copy
 
@@ -81,10 +82,12 @@ def make_sample(protagonist,
     """Make sample."""
     events = []
     sents = []
+    masks = []
     for choice in choices:
         chain = context + [choice]
         chain_events = []
         chain_sent = []
+        chain_mask = []
         for event in chain:
             verb, subj, obj, iobj, role = event.tuple(protagonist)
             # Convert event
@@ -93,11 +96,14 @@ def make_sample(protagonist,
             tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
             chain_events.append(tmp)
             # Convert sentence
-            chain_sent = event.tagged_sent(role)
-            # TODO
+            sent = event.tagged_sent(role)
+            sent_input = tokenizer(sent, padding="max_length", max_length=50, truncation=True)
+            chain_sent.append(sent_input["input_ids"])
+            chain_mask.append(sent_input["attention_mask"])
         events.append(chain_events)
         sents.append(chain_sent)
-    return events, sents, target
+        masks.append(chain_mask)
+    return events, sents, masks, target
 
 
 def generate_single_train(corp_dir,
@@ -127,9 +133,11 @@ def generate_single_train(corp_dir,
         # Load negative pool
         neg_pool = load_negative_pool(work_dir)
         # Load word dictionary
-        # word_dict = load_word_dict(work_dir)
+        word_dict = load_word_dict(work_dir)
         # Load tokenizer
-        tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny")
+        special_tokens = ["[subj]", "[obj]", "[iobj]"]
+        tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
+                                                  additional_special_tokens=special_tokens)
         # Make sub directory
         os.makedirs(data_dir, exist_ok=True)
         partition = []
@@ -164,9 +172,15 @@ def generate_single_train(corp_dir,
                                              context=context,
                                              choices=choices,
                                              target=target,
-                                             word_dict=None,
+                                             word_dict=word_dict,
                                              tokenizer=tokenizer)
-
+                        partition.append(sample)
+                        if len(partition) == part_size:
+                            partition_path = os.path.join(data_dir, "train.{}".format(partition_id))
+                            with open(partition_path, "wb") as f:
+                                pickle.dump(partition, f)
+                            partition_id += 1
+                            partition = []
                 pbar.update(1)
 
 
