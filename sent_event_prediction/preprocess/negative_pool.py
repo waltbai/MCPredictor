@@ -21,15 +21,15 @@ def entity_check(event):
         isinstance(event["iobject"], Entity)
 
 
-def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000):
+def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000, suffix="train", file_type="tar"):
     """Sample a number of negative events."""
-    neg_pool_path = os.path.join(work_dir, "negative_pool.json")
+    neg_pool_path = os.path.join(work_dir, "negative_pool_{}.json".format(suffix))
     if os.path.exists(neg_pool_path):
         logger.info("{} already exists".format(neg_pool_path))
     else:
         neg_pool = []
         with tqdm() as pbar:
-            for doc in document_iterator(corp_dir, tokenize_dir, shuffle=True):
+            for doc in document_iterator(corp_dir, tokenize_dir, shuffle=True, file_type=file_type):
                 if len(neg_pool) >= num_events:
                     break
                 else:
@@ -52,9 +52,9 @@ def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=1000000)
         logger.info("Save negative pool to {}".format(neg_pool_path))
 
 
-def load_negative_pool(work_dir):
+def load_negative_pool(work_dir, suffix="train"):
     """Load negative event pool."""
-    neg_pool_path = os.path.join(work_dir, "negative_pool.json")
+    neg_pool_path = os.path.join(work_dir, "negative_pool_{}.json".format(suffix))
     with open(neg_pool_path, "r") as f:
         neg_pool = json.load(f)
     neg_pool = [Event(**e) for e in neg_pool]
