@@ -27,7 +27,7 @@ class BasicModel(ABC):
         """Train."""
 
     @abstractmethod
-    def evaluate(self, eval_data=None, eval_set=None, verbose=True):
+    def evaluate(self, eval_data=None, verbose=True):
         """Evaluate."""
 
     @abstractmethod
@@ -46,7 +46,7 @@ class BasicModel(ABC):
             self._work_dir, "model",
             "{}.{}.pt".format(self._model_name, suffix))
         self._logger.info("Load model from {}".format(model_path))
-        self._model.load_state_dict(torch.load(model_path))
+        self._model.load_state_dict(torch.load(model_path), strict=False)
 
     def save_model(self, suffix="best",  verbose=False):
         """Save model."""

@@ -27,11 +27,9 @@ class SCPredictorSent(nn.Module):
         self.event_score = build_score(config)
         self.event_attention = build_attention(config)
         # Sentence part
-        vocab_size = len(tokenizer) if tokenizer is not None else 30525
-        self.sent_encoder = build_sent_encoder(config, vocab_size=vocab_size)
+        self.sent_encoder = build_sent_encoder(config, vocab_size=30525)
         self.sent_sequence_model = build_sequence_model(config)
         # self.sent_score = nn.Linear(128, 1)
-        self.sent_constraint_linear = nn.Linear(128, 128)
         self.sent_score = build_score(config)
         self.sent_attention = build_attention(config)
         # Criterion
@@ -53,7 +51,6 @@ class SCPredictorSent(nn.Module):
         seq_len = events.size(2) - 1
         # Event encoding
         # event_repr: size(batch_size, choice_num, seq_len + 1, event_repr_size)
-        assert torch.max(events).item() < 90284
         event_repr = self.event_encoding(events)
         # Event sequence modeling
         # updated_event_repr: size(batch_size, choice_num, seq_len+1, event_repr_size)
@@ -193,7 +190,6 @@ class SCPredictorSent(nn.Module):
         if updated_sent_repr is not None:
             # event_repr: size(batch_size, choice_num, seq_len, event_repr_size)
             # sent_repr: size(batch_size, choice_num, seq_len, event_repr_size)
-            # updated_sent_repr = self.sent_constraint_linear(updated_sent_repr)
             dist = torch.sqrt(torch.pow(updated_event_repr - updated_sent_repr, 2.).sum(-1)).mean()
         else:
             dist = None

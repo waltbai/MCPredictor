@@ -71,7 +71,7 @@ class Document:
         doc_id, entities, events = _parse_document(text, tokenized_dir)
         return cls(doc_id, entities, events)
 
-    def get_chain_for_entity(self, entity, end_pos=None):
+    def get_chain_for_entity(self, entity, end_pos=None, stoplist=None):
         """Get chain for specified entity.
 
         :param entity: protagonist
@@ -84,6 +84,8 @@ class Document:
         result = [event for event in self.events if event.contain(entity)]
         if end_pos is not None:
             result = [event for event in result if event.verb_position <= end_pos]
+        if stoplist is not None:
+            result = [event for event in result if event.predicate_gr(entity) not in stoplist]
         return result
 
     def get_chains(self, stoplist=None):
@@ -131,20 +133,19 @@ def _parse_question(text, entities, doc_id, tokenized_dir=None):
     choices_pos = lines.index("Choices:")
     target_pos = lines.index("Target:")
     entity = entities[int(lines[entity_pos + 1])]
-    context = [Event.from_text(e, entities)
-               for e in lines[context_pos + 1:choices_pos - 1] if e]
     # Read raw text if tokenized_dir is given
     if tokenized_dir is not None:
         raw_path = os.path.join(tokenized_dir, doc_id[:14].lower(), doc_id + ".txt")
         with open(raw_path, "r") as f:
             content = f.read().splitlines()
-        # Add corresponding sentence to each event
-        for event in context:
-            sent_id = event["verb_position"][0]
-            event["sent"] = content[sent_id]
+    context = [Event.from_text(e, entities, doc_text=content)
+               for e in lines[context_pos + 1:choices_pos - 1] if e]
     choices = [Event.from_text(e, entities)
                for e in lines[choices_pos + 1:target_pos - 1] if e]
     target = int(lines[target_pos + 1])
+    # Assign sent to answer
+    answer = choices[target]
+    answer["sent"] = content[answer["verb_position"][0]]
     return entity, context, choices, target
 
 

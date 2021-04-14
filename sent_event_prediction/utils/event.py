@@ -133,6 +133,16 @@ class Event(dict):
             t = t + (self.find_role(protagonist), )
         return t
 
+    def get_words(self):
+        """Get words."""
+        ret_val = [self["verb"]]
+        for role in ["subject", "object", "iobject"]:
+            if isinstance(self[role], Entity):
+                ret_val.append(self[role]["head"])
+            elif self[role] != "None":
+                ret_val.append(self[role])
+        return ret_val
+
     def get_entities(self):
         """Get entities."""
         entities = []
@@ -156,16 +166,23 @@ class Event(dict):
         self["sent"] = " ".join(new_sent)
         self["verb_position"] = [self["verb_position"][0], token_index]
 
-    def tagged_sent(self, role):
+    def tagged_sent(self, role, mask_list=None):
         """Tag verb role of the sentence."""
-        sent = self["sent"].split()
+        sent = self["sent"].lower().split()
         if role not in ["subj", "obj"]:
             role = "iobj"
+        sent_id = self["verb_position"][0]
         verb_index = self["verb_position"][1]
-        sent = sent[:verb_index] + \
-            ["[{}]".format(role)] + [sent[verb_index]] + ["[{}]".format(role)] + \
-            sent[verb_index+1:]
-        return " ".join(sent)
+        result_list = []
+        for index, token in enumerate(sent):
+            if index == verb_index:
+                result_list.extend(["[{}]".format(role), sent[verb_index], "[{}]".format(role)])
+            elif mask_list is not None and token in mask_list:
+                result_list.append("[UNK]")
+            else:
+                result_list.append(token)
+        # Extract sent
+        return " ".join(result_list)
 
     def replace_argument(self, __old, __new):
         """Replace an argument with a new one."""
@@ -206,7 +223,10 @@ class Event(dict):
             iobject_prep = parts[0]
             iobject = find_entity_by_id(parts[1], entities)
         # Get sentence
-        sent = doc_text[verb_position[0]]
+        if doc_text is not None:
+            sent = doc_text[verb_position[0]]
+        else:
+            sent = None
         return cls(verb=verb,
                    verb_lemma=verb_lemma,
                    verb_position=verb_position,

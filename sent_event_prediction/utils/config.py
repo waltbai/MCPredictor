@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument("--mode", default="preprocess",
                         choices=["preprocess", "train", "dev", "test"],
                         type=str, help="Experiment mode")
-    parser.add_argument("--model_config", default="",
+    parser.add_argument("--model_config", default="config/scpredictor-sent.json",
                         type=str, help="Model configuration files")
     # Set model arguments
     return parser.parse_args()

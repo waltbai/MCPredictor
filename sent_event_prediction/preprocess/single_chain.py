@@ -44,7 +44,6 @@ def negative_sampling(positive_event,
         negative_event = random.choice(negative_pool)
         while negative_event["verb_lemma"] == positive_event["verb_lemma"]:
             negative_event = random.choice(negative_pool)
-        event = negative_event
         negative_event = copy(negative_event)
         # Assign entity mapping
         negative_entities = negative_event.get_entities()
@@ -72,6 +71,14 @@ def negative_sampling(positive_event,
     return negative_events
 
 
+def generate_mask_list(chain):
+    """Generate masked words in chain."""
+    masked_list = set()
+    for event in chain:
+        masked_list.update(event.get_words())
+    return masked_list
+
+
 def make_sample(protagonist,
                 context,
                 choices,
@@ -83,11 +90,12 @@ def make_sample(protagonist,
     events = []
     sents = []
     masks = []
-    for choice in choices:
+    for choice_id, choice in enumerate(choices):
         chain = context + [choice]
         chain_events = []
         chain_sent = []
         chain_mask = []
+        mask_list = generate_mask_list(chain)
         for event in chain:
             verb, subj, obj, iobj, role = event.tuple(protagonist)
             # Convert event
@@ -96,7 +104,8 @@ def make_sample(protagonist,
             tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
             chain_events.append(tmp)
             # Convert sentence
-            sent = event.tagged_sent(role)
+            tmp_mask_list = mask_list.difference(event.get_words())
+            sent = event.tagged_sent(role, mask_list=tmp_mask_list)
             sent_input = tokenizer(sent, padding="max_length", max_length=50, truncation=True)
             chain_sent.append(sent_input["input_ids"])
             chain_mask.append(sent_input["attention_mask"])
@@ -131,17 +140,19 @@ def generate_single_train(corp_dir,
         # Load stop list
         stoplist = load_stop_event(work_dir)
         # Load negative pool
-        neg_pool = load_negative_pool(work_dir)
+        neg_pool = load_negative_pool(work_dir, "train")
         # Load word dictionary
         word_dict = load_word_dict(work_dir)
         # Load tokenizer
         special_tokens = ["[subj]", "[obj]", "[iobj]"]
         tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
                                                   additional_special_tokens=special_tokens)
+        # TODO: Change to BertTokenizerFast
         # Make sub directory
         os.makedirs(data_dir, exist_ok=True)
         partition = []
         partition_id = 0
+        total_num = 0
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
@@ -179,10 +190,67 @@ def generate_single_train(corp_dir,
                             partition_path = os.path.join(data_dir, "train.{}".format(partition_id))
                             with open(partition_path, "wb") as f:
                                 pickle.dump(partition, f)
+                            total_num += len(partition)
                             partition_id += 1
                             partition = []
                 pbar.update(1)
+        if len(partition) > 0:
+            partition_path = os.path.join(data_dir, "train.{}".format(partition_id))
+            with open(partition_path, "wb") as f:
+                pickle.dump(partition, f)
+            total_num += len(partition)
+        logger.info("Totally {} samples generated.".format(total_num))
 
 
-def generate_single_eval():
+def generate_single_eval(corp_dir,
+                         work_dir,
+                         tokenized_dir,
+                         mode="dev",
+                         file_type="txt",
+                         overwrite=False):
     """Generate single chain evaluate data."""
+    data_path = os.path.join(work_dir, "single_{}".format(mode))
+    if os.path.exists(data_path) and not overwrite:
+        logger.info("{} already exists.".format(data_path))
+    else:
+        # Load negative pool
+        neg_pool = load_negative_pool(work_dir, mode)
+        # Load word dictionary
+        word_dict = load_word_dict(work_dir)
+        # Load tokenizer
+        special_tokens = ["[subj]", "[obj]", "[iobj]"]
+        tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
+                                                  additional_special_tokens=special_tokens)
+        # Make sample
+        eval_data = []
+        with tqdm() as pbar:
+            for doc in document_iterator(corp_dir=corp_dir,
+                                         tokenized_dir=tokenized_dir,
+                                         file_type=file_type,
+                                         doc_type="eval"):
+                protagonist = doc.entity
+                context = doc.context
+                target = doc.target
+                answer = doc.choices[target]
+                # Re-sample negative events
+                non_protagonist_entities = doc.non_protagonist_entities(protagonist)
+                neg_choices = negative_sampling(positive_event=answer,
+                                                negative_pool=neg_pool,
+                                                protagonist=protagonist,
+                                                non_protagonist_entities=non_protagonist_entities)
+                # Make sample
+                choices = [answer] + neg_choices
+                random.shuffle(choices)
+                target = choices.index(answer)
+                # Make sample
+                sample = make_sample(protagonist=protagonist,
+                                     context=context,
+                                     choices=choices,
+                                     target=target,
+                                     word_dict=word_dict,
+                                     tokenizer=tokenizer)
+                eval_data.append(sample)
+                pbar.update(1)
+        with open(data_path, "wb") as f:
+            pickle.dump(eval_data, f)
+        logger.info("Totally {} samples generated.".format(len(eval_data)))
