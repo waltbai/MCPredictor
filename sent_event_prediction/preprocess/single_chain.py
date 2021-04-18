@@ -6,7 +6,7 @@ import random
 from copy import copy
 
 from tqdm import tqdm
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, BertTokenizerFast
 
 from sent_event_prediction.preprocess.negative_pool import load_negative_pool
 from sent_event_prediction.preprocess.stop_event import load_stop_event
@@ -84,19 +84,19 @@ def make_sample(protagonist,
                 choices,
                 target,
                 word_dict,
-                # role_dict,
                 tokenizer):
     """Make sample."""
     events = []
     sents = []
     masks = []
     for choice_id, choice in enumerate(choices):
-        chain = context + [choice]
+        # chain = context + [choice]
         chain_events = []
         chain_sent = []
         chain_mask = []
-        mask_list = generate_mask_list(chain)
-        for event in chain:
+        mask_list = generate_mask_list(context)
+        # Context
+        for event in context:
             verb, subj, obj, iobj, role = event.tuple(protagonist)
             # Convert event
             predicate_gr = "{}:{}".format(verb, role)
@@ -109,6 +109,13 @@ def make_sample(protagonist,
             sent_input = tokenizer(sent, padding="max_length", max_length=50, truncation=True)
             chain_sent.append(sent_input["input_ids"])
             chain_mask.append(sent_input["attention_mask"])
+        # Choice
+        verb, subj, obj, iobj, role = choice.tuple(protagonist)
+        predicate_gr = "{}:{}".format(verb, role)
+        tmp = [predicate_gr, subj, obj, iobj]
+        tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
+        chain_events.append(tmp)
+        # Add to sample
         events.append(chain_events)
         sents.append(chain_sent)
         masks.append(chain_mask)
@@ -145,9 +152,10 @@ def generate_single_train(corp_dir,
         word_dict = load_word_dict(work_dir)
         # Load tokenizer
         special_tokens = ["[subj]", "[obj]", "[iobj]"]
-        tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
-                                                  additional_special_tokens=special_tokens)
-        # TODO: Change to BertTokenizerFast
+        # tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
+        #                                           additional_special_tokens=special_tokens)
+        tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny",
+                                                      additional_special_tokens=special_tokens)
         # Make sub directory
         os.makedirs(data_dir, exist_ok=True)
         partition = []
@@ -202,12 +210,12 @@ def generate_single_train(corp_dir,
         logger.info("Totally {} samples generated.".format(total_num))
 
 
-def generate_single_eval(corp_dir,
-                         work_dir,
-                         tokenized_dir,
-                         mode="dev",
-                         file_type="txt",
-                         overwrite=False):
+def generate_single_eval_old(corp_dir,
+                             work_dir,
+                             tokenized_dir,
+                             mode="dev",
+                             file_type="txt",
+                             overwrite=False):
     """Generate single chain evaluate data."""
     data_path = os.path.join(work_dir, "single_{}".format(mode))
     if os.path.exists(data_path) and not overwrite:
@@ -219,8 +227,10 @@ def generate_single_eval(corp_dir,
         word_dict = load_word_dict(work_dir)
         # Load tokenizer
         special_tokens = ["[subj]", "[obj]", "[iobj]"]
-        tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
-                                                  additional_special_tokens=special_tokens)
+        # tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
+        #                                           additional_special_tokens=special_tokens)
+        tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny",
+                                                      additional_special_tokens=special_tokens)
         # Make sample
         eval_data = []
         with tqdm() as pbar:
@@ -242,6 +252,50 @@ def generate_single_eval(corp_dir,
                 choices = [answer] + neg_choices
                 random.shuffle(choices)
                 target = choices.index(answer)
+                # Make sample
+                sample = make_sample(protagonist=protagonist,
+                                     context=context,
+                                     choices=choices,
+                                     target=target,
+                                     word_dict=word_dict,
+                                     tokenizer=tokenizer)
+                eval_data.append(sample)
+                pbar.update(1)
+        with open(data_path, "wb") as f:
+            pickle.dump(eval_data, f)
+        logger.info("Totally {} samples generated.".format(len(eval_data)))
+
+
+def generate_single_eval(corp_dir,
+                         work_dir,
+                         tokenized_dir,
+                         mode="dev",
+                         file_type="txt",
+                         overwrite=False):
+    """Generate single chain evaluate data."""
+    data_path = os.path.join(work_dir, "single_{}".format(mode))
+    if os.path.exists(data_path) and not overwrite:
+        logger.info("{} already exists.".format(data_path))
+    else:
+        # Load word dictionary
+        word_dict = load_word_dict(work_dir)
+        # Load tokenizer
+        special_tokens = ["[subj]", "[obj]", "[iobj]"]
+        # tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
+        #                                           additional_special_tokens=special_tokens)
+        tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny",
+                                                      additional_special_tokens=special_tokens)
+        # Make sample
+        eval_data = []
+        with tqdm() as pbar:
+            for doc in document_iterator(corp_dir=corp_dir,
+                                         tokenized_dir=tokenized_dir,
+                                         file_type=file_type,
+                                         doc_type="eval"):
+                protagonist = doc.entity
+                context = doc.context
+                target = doc.target
+                choices = doc.choices
                 # Make sample
                 sample = make_sample(protagonist=protagonist,
                                      context=context,

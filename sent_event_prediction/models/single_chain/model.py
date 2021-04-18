@@ -10,7 +10,7 @@ from tqdm import tqdm
 from transformers import AdamW
 
 from sent_event_prediction.models.basic_model import BasicModel
-from sent_event_prediction.models.single_chain.networks import SCPredictorSent
+from sent_event_prediction.models.single_chain.network import SCPredictorSent
 
 
 class SCSDataset(data.Dataset):

@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+import random
 
 import numpy
 import torch
@@ -10,14 +11,14 @@ from tqdm import tqdm
 from transformers import AdamW
 
 from sent_event_prediction.models.basic_model import BasicModel
-from sent_event_prediction.models.single_chain_sent.network1 import SCPredictorSent
+from sent_event_prediction.models.multi_chain_sent.network import MCPredictorSent
 
 
-class SCSDataset(data.Dataset):
+class MCSDataset(data.Dataset):
     """Single Chain Dataset for mention."""
 
     def __init__(self, __data):
-        super(SCSDataset, self).__init__()
+        super(MCSDataset, self).__init__()
         self.data = __data
 
     def __len__(self):
@@ -26,17 +27,17 @@ class SCSDataset(data.Dataset):
     def __getitem__(self, item):
         events, sents, masks, target = self.data[item]
         events = torch.tensor(events)
-        sents = torch.tensor(sents)[:, :-1, :]
-        masks = torch.tensor(masks)[:, :-1, :]
+        sents = torch.tensor(sents)
+        masks = torch.tensor(masks)
         target = torch.tensor(target)
         return events, sents, masks, target
 
 
-class SingleChainSentModel(BasicModel):
-    """Single chain model combines next sentence prediction."""
+class MultiChainSentModel(BasicModel):
+    """Multi chain model combines event summary information."""
 
     def __init__(self, config_path):
-        super(SingleChainSentModel, self).__init__(config_path)
+        super(MultiChainSentModel, self).__init__(config_path)
         self._logger = logging.getLogger(__name__)
 
     def build_model(self):
@@ -44,7 +45,7 @@ class SingleChainSentModel(BasicModel):
         work_dir = self._work_dir
         device = self._device
         pretrain_embedding = numpy.load(os.path.join(work_dir, "pretrain_embedding.npy"))
-        self._model = SCPredictorSent(self._config, pretrain_embedding).to(device)
+        self._model = MCPredictorSent(self._config, pretrain_embedding).to(device)
 
     def train(self, train_data=None, dev_data=None):
         """Train."""
@@ -56,9 +57,9 @@ class SingleChainSentModel(BasicModel):
         lr = self._config["lr"]
         interval = self._config["interval"]
         # Use default datasets
-        dev_path = os.path.join(work_dir, "single_dev")
+        dev_path = os.path.join(work_dir, "multi_dev")
         with open(dev_path, "rb") as f:
-            dev_set = SCSDataset(pickle.load(f))
+            dev_set = MCSDataset(pickle.load(f))
         # Model
         model = self._model.to(device)
         # model.sent_encoder.requires_grad_(False)
@@ -75,7 +76,7 @@ class SingleChainSentModel(BasicModel):
         ]
         optimizer = AdamW(param_group, lr=lr, weight_decay=1e-6)
         # Train
-        tmp_dir = os.path.join(work_dir, "single_train")
+        tmp_dir = os.path.join(work_dir, "multi_train")
         # with open(os.path.join(tmp_dir, "train.0"), "rb") as f:
         #     train_set = SCSDataset(pickle.load(f))
         best_performance = 0.
@@ -83,12 +84,14 @@ class SingleChainSentModel(BasicModel):
             self._logger.info("===== Epoch {} =====".format(epoch))
             batch_loss = []
             batch_event_loss = []
-            for fn in sorted(os.listdir(tmp_dir)):
+            fn_list = os.listdir(tmp_dir)
+            random.shuffle(fn_list)
+            for fn in fn_list:
             # if True:
                 self._logger.info("Processing slice {} ...".format(fn))
                 train_fp = os.path.join(tmp_dir, fn)
                 with open(train_fp, "rb") as f:
-                    train_set = SCSDataset(pickle.load(f))
+                    train_set = MCSDataset(pickle.load(f))
                 train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8)
                 with tqdm(total=len(train_set)) as pbar:
                     for iteration, (events, sents, masks, target) in enumerate(train_loader):
@@ -135,9 +138,9 @@ class SingleChainSentModel(BasicModel):
         batch_size = self._config["batch_size"]
         # Use default test data
         if eval_set is None:
-            eval_path = os.path.join(work_dir, "single_test")
+            eval_path = os.path.join(work_dir, "multi_test")
             with open(eval_path, "rb") as f:
-                eval_set = SCSDataset(pickle.load(f))
+                eval_set = MCSDataset(pickle.load(f))
         eval_loader = data.DataLoader(eval_set, batch_size, num_workers=8)
         # Evaluate
         model = self._model

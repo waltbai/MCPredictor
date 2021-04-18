@@ -2,6 +2,7 @@
 import logging
 import os
 
+from sent_event_prediction.preprocess.multi_chain import generate_multi_train, generate_multi_eval
 from sent_event_prediction.preprocess.negative_pool import generate_negative_pool
 from sent_event_prediction.preprocess.single_chain import generate_single_train, generate_single_eval
 from sent_event_prediction.preprocess.stop_event import count_stop_event
@@ -24,18 +25,19 @@ if __name__ == "__main__":
                            num_events=1000000,
                            suffix="train",
                            file_type="tar")
-    generate_negative_pool(corp_dir=dev_doc_dir,
-                           tokenize_dir=tokenize_dir,
-                           work_dir=work_dir,
-                           num_events=None,
-                           suffix="dev",
-                           file_type="tar")
-    generate_negative_pool(corp_dir=test_doc_dir,
-                           tokenize_dir=tokenize_dir,
-                           work_dir=work_dir,
-                           num_events=None,
-                           suffix="test",
-                           file_type="tar")
+    # generate_negative_pool(corp_dir=dev_doc_dir,
+    #                        tokenize_dir=tokenize_dir,
+    #                        work_dir=work_dir,
+    #                        num_events=None,
+    #                        suffix="dev",
+    #                        file_type="tar")
+    # generate_negative_pool(corp_dir=test_doc_dir,
+    #                        tokenize_dir=tokenize_dir,
+    #                        work_dir=work_dir,
+    #                        num_events=None,
+    #                        suffix="test",
+    #                        file_type="tar")
+    # Single chain
     generate_single_train(corp_dir=train_doc_dir,
                           work_dir=work_dir,
                           tokenized_dir=tokenize_dir,
@@ -44,9 +46,27 @@ if __name__ == "__main__":
     generate_single_eval(corp_dir=dev_corp_dir,
                          work_dir=work_dir,
                          tokenized_dir=tokenize_dir,
-                         mode="dev")
+                         mode="dev",
+                         overwrite=False)
     test_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "test_10k")
     generate_single_eval(corp_dir=test_corp_dir,
                          work_dir=work_dir,
                          tokenized_dir=tokenize_dir,
-                         mode="test")
+                         mode="test",
+                         overwrite=False)
+    # Multi chain
+    generate_multi_train(corp_dir=train_doc_dir,
+                         work_dir=work_dir,
+                         tokenized_dir=tokenize_dir,
+                         overwrite=False)
+    generate_multi_eval(corp_dir=dev_corp_dir,
+                        work_dir=work_dir,
+                        tokenized_dir=tokenize_dir,
+                        mode="dev",
+                        overwrite=False)
+    generate_multi_eval(corp_dir=dev_corp_dir,
+                        work_dir=work_dir,
+                        tokenized_dir=tokenize_dir,
+                        mode="test",
+                        overwrite=False)
+

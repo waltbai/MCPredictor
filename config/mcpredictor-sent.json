@@ -1,5 +1,5 @@
 {
-  "model_name": "scpredictor-sent-full",
+  "model_name": "mcpredictor-sent-full",
   "sequence_model": "transformer",
   "score": "euclidean",
   "attention": "scaled-dot",
@@ -13,7 +13,7 @@
   "num_heads": 16,
   "dropout": 0.1,
   "lr": 1e-4,
-  "batch_size": 200,
+  "batch_size": 100,
   "npoch": 30,
-  "interval": 250
+  "interval": 500
 }
