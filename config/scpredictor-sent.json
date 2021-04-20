@@ -15,5 +15,6 @@
   "lr": 1e-4,
   "batch_size": 200,
   "npoch": 30,
-  "interval": 250
+  "interval": 250,
+  "use_sent": true
 }

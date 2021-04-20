@@ -43,7 +43,7 @@ def make_sample(doc,
         for choice_role in ["subject", "object", "iobject"]:
             protagonist = choice[choice_role]
             # Get chain by protagonist
-            chain = doc.get_chain_for_entity(protagonist, verb_position, stoplist)
+            chain = doc.get_chain_for_entity(protagonist, end_pos=verb_position, stoplist=stoplist)
             mask_list = generate_mask_list(chain)
             # Truncate
             if len(chain) > context_size:
@@ -57,7 +57,7 @@ def make_sample(doc,
             for event in chain:
                 if event is not None:
                     verb, subj, obj, iobj, role = event.tuple(protagonist)
-                    predicate_gr = "{}:{}".format(verb, role)
+                    predicate_gr = "{}:{}".format(verb, role) if protagonist != "None" else "None"
                     tmp_mask_list = mask_list.difference(event.get_words())
                     sent = event.tagged_sent(role, mask_list=tmp_mask_list)
                 else:
@@ -71,7 +71,7 @@ def make_sample(doc,
                 chain_mask.append(sent_input["attention_mask"])
             # Choice event
             verb, subj, obj, iobj, role = choice.tuple(protagonist)
-            predicate_gr = "{}:{}".format(verb, role)
+            predicate_gr = "{}:{}".format(verb, role) if protagonist != "None" else "None"
             tmp = [predicate_gr, subj, obj, iobj]
             event_input = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
             chain_event.append(event_input)

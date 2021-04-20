@@ -56,6 +56,7 @@ class MultiChainSentModel(BasicModel):
         batch_size = self._config["batch_size"]
         lr = self._config["lr"]
         interval = self._config["interval"]
+        use_sent = self._config["use_sent"]
         # Use default datasets
         dev_path = os.path.join(work_dir, "multi_dev")
         with open(dev_path, "rb") as f:
@@ -100,7 +101,13 @@ class MultiChainSentModel(BasicModel):
                         masks = masks.to(device)
                         target = target.to(device)
                         model.train()
-                        event_loss = model(events, sents, masks, target)
+                        if use_sent:
+                            event_loss = model(events=events,
+                                               sents=sents,
+                                               sent_mask=masks,
+                                               target=target)
+                        else:
+                            event_loss = model(events=events, target=target)
                         loss = event_loss
                         # Get loss
                         batch_loss.append(loss.item())
@@ -136,6 +143,7 @@ class MultiChainSentModel(BasicModel):
         work_dir = self._work_dir
         device = self._device
         batch_size = self._config["batch_size"]
+        use_sent = self._config["use_sent"]
         # Use default test data
         if eval_set is None:
             eval_path = os.path.join(work_dir, "multi_test")
@@ -152,7 +160,12 @@ class MultiChainSentModel(BasicModel):
                 sents = sents.to(device)
                 masks = masks.to(device)
                 target = target.to(device)
-                pred = model(events, sents, masks)
+                if use_sent:
+                    pred = model(events=events,
+                                 sents=sents,
+                                 sent_mask=masks)
+                else:
+                    pred = model(events=events)
                 acc += pred.argmax(1).eq(target).sum().item()
                 tot += len(events)
         accuracy = acc / tot

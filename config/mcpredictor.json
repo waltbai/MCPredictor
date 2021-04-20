@@ -1,5 +1,5 @@
 {
-  "model_name": "scpredictor-full",
+  "model_name": "mcpredictor-full",
   "sequence_model": "transformer",
   "score": "euclidean",
   "attention": "scaled-dot",

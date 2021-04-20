@@ -42,7 +42,7 @@ def _parse_document(text, tokenized_dir=None):
             # Check if current event is duplicate.
             # Since events are sorted by verb_pos,
             # we only need to look back one event.
-            # if len(events) == 0 or not events[-1] == cur_event:
+            # if len(events) == 0 or events[-1]["verb_position"] != cur_event["verb_position"]:
             #     events.append(cur_event)
             # TODO: In old code, duplicate check is invalid,
             #  however the code works well.
@@ -78,6 +78,7 @@ class Document:
         :type entity: Entity
         :param end_pos: get events until stop position
         :type end_pos: tuple[int, int] or None
+        :param stoplist: stop word list
         :return:
         """
         # Get chain

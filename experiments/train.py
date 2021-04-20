@@ -10,6 +10,6 @@ if __name__ == "__main__":
     model = SingleChainSentModel(CONFIG.model_config)
     model.build_model()
     model.print_model_info()
-    model.train()
+    # model.train()
     model.load_model()
     model.evaluate()

@@ -48,7 +48,7 @@ class MCPredictorSent(nn.Module):
         chain_num = events.size(2)
         seq_len = events.size(3) - 1
         # Event mask
-        event_mask = events.sum(-1)[:, :, :, :-1]
+        event_mask = events.sum(-1)[:, :, :, :-1].to(torch.bool)
         # Event encoding
         # event_repr: size(batch_size, choice_num, chain_num, seq_len + 1, event_repr_size)
         event_repr = self.event_encoding(events)

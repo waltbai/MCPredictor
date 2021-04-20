@@ -91,7 +91,7 @@ class Event(dict):
                    self["object"] == argument or \
                    self["iobject"] == argument
 
-    def find_role(self, argument):
+    def find_role(self, argument, stoplist=None):
         """Find the role of the argument."""
         if argument == self["subject"]:
             return "subj"
