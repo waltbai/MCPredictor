@@ -45,8 +45,11 @@ class BasicModel(ABC):
         model_path = os.path.join(
             self._work_dir, "model",
             "{}.{}.pt".format(self._model_name, suffix))
-        self._logger.info("Load model from {}".format(model_path))
-        self._model.load_state_dict(torch.load(model_path), strict=False)
+        if os.path.exists(model_path):
+            self._logger.info("Load model from {}".format(model_path))
+            self._model.load_state_dict(torch.load(model_path), strict=False)
+        else:
+            self._logger.info("Fail to load model from {}".format(model_path))
 
     def save_model(self, suffix="best",  verbose=False):
         """Save model."""

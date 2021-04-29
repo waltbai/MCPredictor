@@ -6,6 +6,7 @@ import random
 import numpy
 import torch
 from torch.nn import CrossEntropyLoss
+from torch.optim import Adam
 from torch.utils import data
 from tqdm import tqdm
 from transformers import AdamW
@@ -75,11 +76,12 @@ class MultiChainSentModel(BasicModel):
                 "params": [p for n, p in model.named_parameters() if "bert" not in n]
             }
         ]
-        optimizer = AdamW(param_group, lr=lr, weight_decay=1e-6)
+        # optimizer = AdamW(param_group, lr=lr, weight_decay=1e-6)
+        optimizer = Adam(param_group, lr=lr, weight_decay=1e-6)
         # Train
         tmp_dir = os.path.join(work_dir, "multi_train")
         # with open(os.path.join(tmp_dir, "train.0"), "rb") as f:
-        #     train_set = SCSDataset(pickle.load(f))
+        #     train_set = MCSDataset(pickle.load(f))
         best_performance = 0.
         for epoch in range(1, npoch + 1):
             self._logger.info("===== Epoch {} =====".format(epoch))

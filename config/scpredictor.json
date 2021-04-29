@@ -12,7 +12,7 @@
   "num_layers": 2,
   "num_heads": 16,
   "dropout": 0.1,
-  "lr": 1e-4,
+  "lr": 1e-3,
   "batch_size": 1000,
   "npoch": 30,
   "interval": 50,

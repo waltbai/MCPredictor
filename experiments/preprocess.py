@@ -20,23 +20,11 @@ if __name__ == "__main__":
     tokenize_dir = os.path.join(data_dir, "gigaword-nyt", "tokenized")
     count_stop_event(train_doc_dir, work_dir)
     generate_negative_pool(corp_dir=train_doc_dir,
-                           tokenize_dir=tokenize_dir,
+                           tokenized_dir=None,
                            work_dir=work_dir,
-                           num_events=1000000,
+                           num_events=None,
                            suffix="train",
                            file_type="tar")
-    # generate_negative_pool(corp_dir=dev_doc_dir,
-    #                        tokenize_dir=tokenize_dir,
-    #                        work_dir=work_dir,
-    #                        num_events=None,
-    #                        suffix="dev",
-    #                        file_type="tar")
-    # generate_negative_pool(corp_dir=test_doc_dir,
-    #                        tokenize_dir=tokenize_dir,
-    #                        work_dir=work_dir,
-    #                        num_events=None,
-    #                        suffix="test",
-    #                        file_type="tar")
     # Single chain
     generate_single_train(corp_dir=train_doc_dir,
                           work_dir=work_dir,
@@ -63,10 +51,10 @@ if __name__ == "__main__":
                         work_dir=work_dir,
                         tokenized_dir=tokenize_dir,
                         mode="dev",
-                        overwrite=True)
-    generate_multi_eval(corp_dir=dev_corp_dir,
+                        overwrite=False)
+    generate_multi_eval(corp_dir=test_corp_dir,
                         work_dir=work_dir,
                         tokenized_dir=tokenize_dir,
                         mode="test",
-                        overwrite=True)
+                        overwrite=False)
 

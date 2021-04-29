@@ -71,18 +71,22 @@ class Document:
         doc_id, entities, events = _parse_document(text, tokenized_dir)
         return cls(doc_id, entities, events)
 
-    def get_chain_for_entity(self, entity, end_pos=None, stoplist=None):
+    def get_chain_for_entity(self, entity, end_pos=None, duplicate=False, stoplist=None):
         """Get chain for specified entity.
 
         :param entity: protagonist
         :type entity: Entity
         :param end_pos: get events until stop position
         :type end_pos: tuple[int, int] or None
+        :param duplicate: whether to obtain duplicate verb
         :param stoplist: stop word list
         :return:
         """
         # Get chain
         result = [event for event in self.events if event.contain(entity)]
+        if not duplicate:
+            result = [event for idx, event in enumerate(result)
+                      if idx == 0 or event["verb_position"] != result[idx-1]["verb_position"]]
         if end_pos is not None:
             result = [event for event in result if event.verb_position <= end_pos]
         if stoplist is not None:

@@ -21,7 +21,7 @@ def entity_check(event):
         isinstance(event["iobject"], Entity)
 
 
-def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=None, suffix="train", file_type="tar"):
+def generate_negative_pool(corp_dir, tokenized_dir, work_dir, num_events=None, suffix="train", file_type="tar"):
     """Sample a number of negative events."""
     neg_pool_path = os.path.join(work_dir, "negative_pool_{}.json".format(suffix))
     if os.path.exists(neg_pool_path):
@@ -29,10 +29,12 @@ def generate_negative_pool(corp_dir, tokenize_dir, work_dir, num_events=None, su
     else:
         neg_pool = []
         with tqdm() as pbar:
-            for doc in document_iterator(corp_dir, tokenize_dir, shuffle=True, file_type=file_type):
+            for doc in document_iterator(corp_dir, tokenized_dir, shuffle=True, file_type=file_type):
                 if num_events is not None and len(neg_pool) >= num_events:
                     break
                 else:
+                    for ent in doc.entities:
+                        ent.clear_mentions()
                     # events = [e for e in doc.events]
                     events = doc.events
                     # If event less than 10, pick all events,

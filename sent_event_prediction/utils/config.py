@@ -19,6 +19,7 @@ def parse_args():
                         type=str, help="Experiment mode")
     parser.add_argument("--model_config", default="config/scpredictor-sent.json",
                         type=str, help="Model configuration files")
+    parser.add_argument("--multi", action="store_true", default=False)
     # Set model arguments
     return parser.parse_args()
 

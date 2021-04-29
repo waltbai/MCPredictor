@@ -11,7 +11,7 @@ from sent_event_prediction.preprocess.single_chain import negative_sampling
 from sent_event_prediction.preprocess.stop_event import load_stop_event
 from sent_event_prediction.preprocess.word_dict import load_word_dict
 from sent_event_prediction.utils.document import document_iterator
-
+from sent_event_prediction.utils.entity import Entity
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,10 @@ def make_sample(doc,
             chain_event = []
             chain_sent = []
             chain_mask = []
+            if isinstance(protagonist, Entity):
+                p_head = protagonist["head"]
+            else:
+                p_head = protagonist
             for event in chain:
                 if event is not None:
                     verb, subj, obj, iobj, role = event.tuple(protagonist)
@@ -178,6 +182,7 @@ def generate_multi_eval(corp_dir,
                         tokenized_dir,
                         mode="dev",
                         file_type="txt",
+                        context_size=8,
                         overwrite=False):
     """Generate multi chain evaluate data."""
     data_path = os.path.join(work_dir, "multi_{}".format(mode))
@@ -207,7 +212,7 @@ def generate_multi_eval(corp_dir,
                 sample = make_sample(doc=doc,
                                      choices=choices,
                                      target=target,
-                                     context_size=8,
+                                     context_size=context_size,
                                      verb_position=context[-1]["verb_position"],
                                      word_dict=word_dict,
                                      stoplist=stoplist,

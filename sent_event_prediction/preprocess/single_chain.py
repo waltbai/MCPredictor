@@ -58,13 +58,6 @@ def negative_sampling(positive_event,
                     new_ent = old_ent
             else:
                 new_ent = protagonist
-            # Replace mention and change verb_position
-            old_mention = old_ent.find_mention_by_pos(negative_event["verb_position"])
-            if new_ent is protagonist:
-                new_mention = new_ent.find_mention_by_pos(positive_event["verb_position"])
-            else:
-                new_mention = new_ent.find_longest_mention()
-            negative_event.replace_mention(old_mention, new_mention)
             # Replace entity
             negative_event.replace_argument(old_ent, new_ent)
         negative_events.append(negative_event)
@@ -75,7 +68,8 @@ def generate_mask_list(chain):
     """Generate masked words in chain."""
     masked_list = set()
     for event in chain:
-        masked_list.update(event.get_words())
+        if event is not None:
+            masked_list.update(event.get_words())
     return masked_list
 
 
@@ -97,15 +91,19 @@ def make_sample(protagonist,
         mask_list = generate_mask_list(context)
         # Context
         for event in context:
-            verb, subj, obj, iobj, role = event.tuple(protagonist)
+            if event is not None:
+                verb, subj, obj, iobj, role = event.tuple(protagonist)
+                predicate_gr = "{}:{}".format(verb, role)
+                # Convert sentence
+                tmp_mask_list = mask_list.difference(event.get_words())
+                sent = event.tagged_sent(role, mask_list=tmp_mask_list)
+            else:
+                predicate_gr = subj = obj = iobj = "None"
+                sent = ""
             # Convert event
-            predicate_gr = "{}:{}".format(verb, role)
             tmp = [predicate_gr, subj, obj, iobj]
             tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
             chain_events.append(tmp)
-            # Convert sentence
-            tmp_mask_list = mask_list.difference(event.get_words())
-            sent = event.tagged_sent(role, mask_list=tmp_mask_list)
             sent_input = tokenizer(sent, padding="max_length", max_length=50, truncation=True)
             chain_sent.append(sent_input["input_ids"])
             chain_mask.append(sent_input["attention_mask"])
@@ -152,8 +150,6 @@ def generate_single_train(corp_dir,
         word_dict = load_word_dict(work_dir)
         # Load tokenizer
         special_tokens = ["[subj]", "[obj]", "[iobj]"]
-        # tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
-        #                                           additional_special_tokens=special_tokens)
         tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny",
                                                       additional_special_tokens=special_tokens)
         # Make sub directory
@@ -210,79 +206,24 @@ def generate_single_train(corp_dir,
         logger.info("Totally {} samples generated.".format(total_num))
 
 
-def generate_single_eval_old(corp_dir,
-                             work_dir,
-                             tokenized_dir,
-                             mode="dev",
-                             file_type="txt",
-                             overwrite=False):
-    """Generate single chain evaluate data."""
-    data_path = os.path.join(work_dir, "single_{}".format(mode))
-    if os.path.exists(data_path) and not overwrite:
-        logger.info("{} already exists.".format(data_path))
-    else:
-        # Load negative pool
-        neg_pool = load_negative_pool(work_dir, mode)
-        # Load word dictionary
-        word_dict = load_word_dict(work_dir)
-        # Load tokenizer
-        special_tokens = ["[subj]", "[obj]", "[iobj]"]
-        # tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
-        #                                           additional_special_tokens=special_tokens)
-        tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny",
-                                                      additional_special_tokens=special_tokens)
-        # Make sample
-        eval_data = []
-        with tqdm() as pbar:
-            for doc in document_iterator(corp_dir=corp_dir,
-                                         tokenized_dir=tokenized_dir,
-                                         file_type=file_type,
-                                         doc_type="eval"):
-                protagonist = doc.entity
-                context = doc.context
-                target = doc.target
-                answer = doc.choices[target]
-                # Re-sample negative events
-                non_protagonist_entities = doc.non_protagonist_entities(protagonist)
-                neg_choices = negative_sampling(positive_event=answer,
-                                                negative_pool=neg_pool,
-                                                protagonist=protagonist,
-                                                non_protagonist_entities=non_protagonist_entities)
-                # Make sample
-                choices = [answer] + neg_choices
-                random.shuffle(choices)
-                target = choices.index(answer)
-                # Make sample
-                sample = make_sample(protagonist=protagonist,
-                                     context=context,
-                                     choices=choices,
-                                     target=target,
-                                     word_dict=word_dict,
-                                     tokenizer=tokenizer)
-                eval_data.append(sample)
-                pbar.update(1)
-        with open(data_path, "wb") as f:
-            pickle.dump(eval_data, f)
-        logger.info("Totally {} samples generated.".format(len(eval_data)))
-
-
 def generate_single_eval(corp_dir,
                          work_dir,
                          tokenized_dir,
                          mode="dev",
                          file_type="txt",
+                         context_size=8,
                          overwrite=False):
     """Generate single chain evaluate data."""
     data_path = os.path.join(work_dir, "single_{}".format(mode))
     if os.path.exists(data_path) and not overwrite:
         logger.info("{} already exists.".format(data_path))
     else:
+        # Load stop event list
+        stoplist = load_stop_event(work_dir)
         # Load word dictionary
         word_dict = load_word_dict(work_dir)
         # Load tokenizer
         special_tokens = ["[subj]", "[obj]", "[iobj]"]
-        # tokenizer = AutoTokenizer.from_pretrained("prajjwal1/bert-tiny",
-        #                                           additional_special_tokens=special_tokens)
         tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny",
                                                       additional_special_tokens=special_tokens)
         # Make sample
@@ -293,7 +234,15 @@ def generate_single_eval(corp_dir,
                                          file_type=file_type,
                                          doc_type="eval"):
                 protagonist = doc.entity
-                context = doc.context
+                # context = doc.context
+                # Context cannot be directly used, since there are slight differences
+                context = doc.get_chain_for_entity(protagonist,
+                                                   end_pos=doc.context[-1]["verb_position"],
+                                                   stoplist=stoplist)
+                if len(context) > context_size:
+                    context = context[-context_size:]
+                if len(context) < context_size:
+                    context = [None] * (context_size - len(context)) + context
                 target = doc.target
                 choices = doc.choices
                 # Make sample
