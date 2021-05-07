@@ -14,6 +14,7 @@ def _parse_document(text, tokenized_dir=None):
 
     :param text: document content.
     :param tokenized_dir: raw text directory
+    :param pos_dir: pos result directory
     :return: doc_id, entities, events
     """
     lines = [_.strip() for _ in text.splitlines()]
