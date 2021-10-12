@@ -56,7 +56,7 @@ Since original texts are needed,
 "tokenized.tar.gz" should be decompressed 
 into the same directory.
 
-## 2. Installation
+## 3. Installation
 Use command ```pip install -e .``` in 
 project root directory.
 
@@ -65,20 +65,20 @@ install dependencies.
 
 Be sure to use python>=3.6 environment.
 
-## 3. Preprocess
+## 4. Preprocess
 Use command ```experiments/preprocess.py``` to preprocess data.
 Following arguments should be specified:
 - ```--data_dir```: the directory of MCNC dataset
 - ```--work_dir```: the directory of temp data and results
 
-## 4. Training
+## 5. Training
 ### train mcpredictor:
 ```python experiments/train.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --device cuda:0 --multi```
 
 ### train scpredictor:
 ```python experiments/train.py --work_dir <work_dir> --model_config config/scpredictor-sent.json --device cuda:0```
 
-## 5. Testing
+## 6. Testing
 ### test mcpredictor:
 ```python experiments/test.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --device cuda:0 --multi```
 
