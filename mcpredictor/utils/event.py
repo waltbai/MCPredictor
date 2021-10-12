@@ -169,26 +169,27 @@ class Event(dict):
     def tagged_sent(self, role, mask_list=None):
         """Tag verb role of the sentence."""
         sent = self["sent"].lower().split()
-        pos = self["pos"]
+        # pos = self["pos"]
         if role not in ["subj", "obj"]:
             role = "iobj"
         sent_id = self["verb_position"][0]
         verb_index = self["verb_position"][1]
         token_list = []
-        pos_list = []
+        # pos_list = []
         # Use "O" to represent control tokens
         for index, token in enumerate(sent):
             if index == verb_index:
                 token_list.extend(["[{}]".format(role), sent[verb_index], "[{}]".format(role)])
-                pos_list.extend(["O", pos[verb_index], "O"])
+                # pos_list.extend(["O", pos[verb_index], "O"])
             elif mask_list is not None and token in mask_list:
                 token_list.append("[UNK]")
-                pos_list.append("O")
+                # pos_list.append("O")
             else:
                 token_list.append(token)
-                pos_list.append(pos[index])
+                # pos_list.append(pos[index])
         # Extract sent
-        return token_list, pos_list
+        # return token_list, pos_list
+        return token_list
 
     def replace_argument(self, __old, __new):
         """Replace an argument with a new one."""
