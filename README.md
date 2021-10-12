@@ -28,7 +28,7 @@ java -classpath $BUILD_DIR:$DIR/../src/main/java:$DIR/../lib/* \
 ```
 
 #### 2.1.2 modify ```bin/event_pipeline/1-parse/preprocess/gigaword/gigaword_split.py```
-It is recommended to use absolute directory  ```#!<data-dir>/bin/run_py``` instead of ```#!../run_py```
+It is recommended to use absolute directory  ```#!<code-dir>/bin/run_py``` instead of ```#!../run_py```
 
 It is recommended to use lxml engine in BeautifulSoup:
 ```soup = BeautifulSoup(xml_data, "lxml")```
