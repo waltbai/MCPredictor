@@ -73,14 +73,14 @@ Following arguments should be specified:
 
 ## 4. Training
 ### train mcpredictor:
-```python experiments/train.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --multi```
+```python experiments/train.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --device cuda:0 --multi```
 
 ### train scpredictor:
-```python experiments/train.py --work_dir <work_dir> --model_config config/scpredictor-sent.json```
+```python experiments/train.py --work_dir <work_dir> --model_config config/scpredictor-sent.json --device cuda:0```
 
 ## 5. Testing
 ### test mcpredictor:
-```python experiments/test.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --multi```
+```python experiments/test.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --device cuda:0 --multi```
 
 ### test scpredictor:
-```python experiments/test.py --work_dir <work_dir> --model_config config/scpredictor-sent.json```
+```python experiments/test.py --work_dir <work_dir> --model_config config/scpredictor-sent.json --device cuda:0```
