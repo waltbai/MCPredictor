@@ -1,8 +1,8 @@
 import logging
 
-from sent_event_prediction.models.single_chain_sent.model import SingleChainSentModel
-from sent_event_prediction.models.multi_chain_sent.model import MultiChainSentModel
-from sent_event_prediction.utils.config import CONFIG
+from mcpredictor.models.single_chain_sent.model import SingleChainSentModel
+from mcpredictor.models.multi_chain_sent.model import MultiChainSentModel
+from mcpredictor.utils.config import CONFIG
 
 
 if __name__ == "__main__":

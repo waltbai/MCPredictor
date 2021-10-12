@@ -1,12 +1,12 @@
 import torch
 from torch import nn
 
-from sent_event_prediction.models.base.attention import build_attention
-from sent_event_prediction.models.base.embedding import build_embedding
-from sent_event_prediction.models.base.event_encoder import build_event_encoder
-from sent_event_prediction.models.base.score import build_score
-from sent_event_prediction.models.base.sentence_encoder import build_sent_encoder
-from sent_event_prediction.models.base.sequence_model import build_sequence_model
+from mcpredictor.models.base.attention import build_attention
+from mcpredictor.models.base.embedding import build_embedding
+from mcpredictor.models.base.event_encoder import build_event_encoder
+from mcpredictor.models.base.score import build_score
+from mcpredictor.models.base.sentence_encoder import build_sent_encoder
+from mcpredictor.models.base.sequence_model import build_sequence_model
 
 
 class SCPredictorSent(nn.Module):

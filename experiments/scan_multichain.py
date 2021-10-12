@@ -2,8 +2,8 @@ import os
 
 from tqdm import tqdm
 
-from sent_event_prediction.preprocess.stop_event import load_stop_event
-from sent_event_prediction.utils.document import document_iterator
+from mcpredictor.preprocess.stop_event import load_stop_event
+from mcpredictor.utils.document import document_iterator
 
 if __name__ == "__main__":
     tokenize_dir = "/home/jinxiaolong/bl/data/gandc16/gigaword-nyt/tokenized"

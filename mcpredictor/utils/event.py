@@ -1,8 +1,8 @@
 """Event class for gigaword processed document."""
 import re
 
-from sent_event_prediction.utils.common import unescape
-from sent_event_prediction.utils.entity import Entity, transform_entity
+from mcpredictor.utils.common import unescape
+from mcpredictor.utils.entity import Entity, transform_entity
 
 event_re = re.compile(r'(?P<verb>[^/]*) / (?P<verb_lemma>[^/]*) / '
                       r'verb_pos=\((?P<sentence_num>\d+),(?P<word_index>\d+)\) / '
@@ -169,20 +169,26 @@ class Event(dict):
     def tagged_sent(self, role, mask_list=None):
         """Tag verb role of the sentence."""
         sent = self["sent"].lower().split()
+        pos = self["pos"]
         if role not in ["subj", "obj"]:
             role = "iobj"
         sent_id = self["verb_position"][0]
         verb_index = self["verb_position"][1]
-        result_list = []
+        token_list = []
+        pos_list = []
+        # Use "O" to represent control tokens
         for index, token in enumerate(sent):
             if index == verb_index:
-                result_list.extend(["[{}]".format(role), sent[verb_index], "[{}]".format(role)])
+                token_list.extend(["[{}]".format(role), sent[verb_index], "[{}]".format(role)])
+                pos_list.extend(["O", pos[verb_index], "O"])
             elif mask_list is not None and token in mask_list:
-                result_list.append("[UNK]")
+                token_list.append("[UNK]")
+                pos_list.append("O")
             else:
-                result_list.append(token)
+                token_list.append(token)
+                pos_list.append(pos[index])
         # Extract sent
-        return " ".join(result_list)
+        return token_list, pos_list
 
     def replace_argument(self, __old, __new):
         """Replace an argument with a new one."""
@@ -191,7 +197,7 @@ class Event(dict):
                 self[key] = __new
 
     @classmethod
-    def from_text(cls, text, entities, doc_text=None, sent_len=50):
+    def from_text(cls, text, entities, doc_text=None, doc_pos=None):
         """Construct Event object from text.
 
         :param text: text to be parsed.
@@ -200,8 +206,8 @@ class Event(dict):
         :type entities: list[Entity]
         :param doc_text: document text
         :type doc_text: list[str]
-        :param sent_len: max sentence length
-        :type sent_len: int
+        :param doc_pos: document pos
+        :type doc_pos: list[list[str]]
         """
         result = event_re.match(text)
         groups = result.groupdict()
@@ -227,6 +233,10 @@ class Event(dict):
             sent = doc_text[verb_position[0]]
         else:
             sent = None
+        if doc_pos is not None:
+            pos = doc_pos[verb_position[0]]
+        else:
+            pos = None
         return cls(verb=verb,
                    verb_lemma=verb_lemma,
                    verb_position=verb_position,
@@ -235,7 +245,8 @@ class Event(dict):
                    object=object,
                    iobject_prep=iobject_prep,
                    iobject=iobject,
-                   sent=sent
+                   sent=sent,
+                   pos=pos
                    )
 
 

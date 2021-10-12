@@ -17,7 +17,7 @@ import pickle
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from sent_event_prediction.utils.config import CONFIG
+from mcpredictor.utils.config import CONFIG
 
 if __name__ == "__main__":
     work_dir = CONFIG.work_dir

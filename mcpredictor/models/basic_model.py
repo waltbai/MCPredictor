@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from sent_event_prediction.utils.config import CONFIG
+from mcpredictor.utils.config import CONFIG
 
 
 class BasicModel(ABC):
@@ -47,7 +47,8 @@ class BasicModel(ABC):
             "{}.{}.pt".format(self._model_name, suffix))
         if os.path.exists(model_path):
             self._logger.info("Load model from {}".format(model_path))
-            self._model.load_state_dict(torch.load(model_path), strict=False)
+            self._model.load_state_dict(
+                torch.load(model_path, map_location=self._device), strict=False)
         else:
             self._logger.info("Fail to load model from {}".format(model_path))
 

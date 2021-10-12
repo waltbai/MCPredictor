@@ -3,7 +3,7 @@ import os
 import re
 import string
 
-from sent_event_prediction.utils.mention import Mention
+from mcpredictor.utils.mention import Mention
 
 
 # Punctuation regex

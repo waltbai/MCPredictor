@@ -8,12 +8,12 @@ from torch.utils import data
 from tqdm import tqdm
 from transformers import BertTokenizerFast
 
-from sent_event_prediction.models.multi_chain_sent.model import MultiChainSentModel
-from sent_event_prediction.models.single_chain.model import SingleChainSentModel
-from sent_event_prediction.preprocess.multi_chain import generate_mask_list
-from sent_event_prediction.preprocess.stop_event import load_stop_event
-from sent_event_prediction.utils.config import CONFIG
-from sent_event_prediction.utils.document import document_iterator
+from mcpredictor.models.multi_chain_sent.model import MultiChainSentModel
+from mcpredictor.models.single_chain.model import SingleChainSentModel
+from mcpredictor.preprocess.multi_chain import generate_mask_list
+from mcpredictor.preprocess.stop_event import load_stop_event
+from mcpredictor.utils.config import CONFIG
+from mcpredictor.utils.document import document_iterator
 
 
 logger = logging.getLogger(__name__)
@@ -76,6 +76,7 @@ def tag_dev(data_dir, work_dir):
     """POS tagging results."""
     dev_corp_dir = os.path.join(data_dir, "gigaword-nyt", "eval", "multiple_choice", "dev_10k")
     tokenized_dir = os.path.join(data_dir, "gigaword-nyt", "tokenized")
+    pos_dir = os.path.join(data_dir, "gigaword-nyt", "candc", "tags")
     # Load stop event list
     stoplist = load_stop_event(work_dir)
     # Build tokenizer
@@ -88,6 +89,7 @@ def tag_dev(data_dir, work_dir):
     with tqdm() as pbar:
         for doc in document_iterator(corp_dir=dev_corp_dir,
                                      tokenized_dir=tokenized_dir,
+                                     pos_dir=pos_dir,
                                      file_type="txt",
                                      doc_type="eval"):
             target = doc.target
@@ -113,12 +115,11 @@ def tag_dev(data_dir, work_dir):
                         if event is not None:
                             verb, subj, obj, iobj, role = event.tuple(protagonist)
                             tmp_mask_list = mask_list.difference(event.get_words())
-                            sent = event.tagged_sent(role, mask_list=tmp_mask_list)
-                            # print(sent)
-                            sent_tags = nltk.pos_tag(sent.split())
-                            sent_words = sent.split()
-                            sent_tags = [tag if tok not in special_tokens else "O"
-                                         for tok, tag in sent_tags]
+                            sent_words, sent_tags = event.tagged_sent(role, mask_list=tmp_mask_list)
+                            vi = event["verb_position"][1] + 1
+                            sent_tags[vi] = "VBSelf"
+                            # Align
+                            # Align
                             sent_tags = align_tags_to_ids(sent_words, sent_tags, tokenizer)
                         else:
                             sent_tags = ["O"] * 50
@@ -131,6 +132,18 @@ def tag_dev(data_dir, work_dir):
     with open(tag_path, "wb") as f:
         pickle.dump(tags, f)
     logger.info("Dev tags save to {}".format(tag_path))
+
+
+def replace_verb_self(tags):
+    result = []
+    verb_flag = False
+    for t in tags:
+        if t in ["[subj]", "[obj]", "[iobj]"]:
+            result.append(t)
+            verb_flag = not verb_flag
+        elif verb_flag:
+            result.append("VBSelf")
+    return result
 
 
 if __name__ == "__main__":
@@ -149,9 +162,11 @@ if __name__ == "__main__":
         # "JJ", "JJR", "JJS", "PDT",      # Adjectives
         # "NN", "NNS", "NNP", "NNPS",     # Nouns
         # "RB", "RBR", "RBS", "RP",       # Adverbs
-        # "VB", "VBD", "VBG", "VBN", "VBP", "VBZ",    # Verbs
+        # "VB", "VBD", "VBG", "VBN", "VBP", "VBZ",    # Verbs(Other)
+        # "VBSelf",     # Verbs(Self)
     ]
     tags = []
+    verb_flag = False
     for sample in raw_tags:
         sample_tags = []
         for choice in sample:

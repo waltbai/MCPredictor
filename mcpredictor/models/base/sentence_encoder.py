@@ -27,7 +27,8 @@ class BertEncoder(nn.Module):
         original_size = sents.size()
         sent_len = original_size[-1]
         sents = sents.view(-1, sent_len)
-        mask = mask.view(-1, sent_len)
+        if mask is not None:
+            mask = mask.view(-1, sent_len)
         result = self.bert(input_ids=sents, attention_mask=mask, return_dict=True)
         sent_embeddings = result.last_hidden_state
         sent_embeddings = sent_embeddings[:, 0, :]

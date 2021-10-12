@@ -7,9 +7,9 @@ import random
 
 from tqdm import tqdm
 
-from sent_event_prediction.utils.document import document_iterator
-from sent_event_prediction.utils.entity import Entity
-from sent_event_prediction.utils.event import Event
+from mcpredictor.utils.document import document_iterator
+from mcpredictor.utils.entity import Entity
+from mcpredictor.utils.event import Event
 
 logger = logging.getLogger(__name__)
 

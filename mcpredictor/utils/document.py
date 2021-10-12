@@ -3,11 +3,11 @@ import os
 import random
 import tarfile
 
-from sent_event_prediction.utils.entity import Entity
-from sent_event_prediction.utils.event import Event
+from mcpredictor.utils.entity import Entity
+from mcpredictor.utils.event import Event
 
 
-def _parse_document(text, tokenized_dir=None):
+def _parse_document(text, tokenized_dir=None, pos_dir=None):
     """Parse document.
 
     Refer to G&C16
@@ -35,11 +35,19 @@ def _parse_document(text, tokenized_dir=None):
             content = f.read().splitlines()
     else:
         content = None
+    # Read pos tag if pos_dir is given
+    if pos_dir is not None:
+        pos_path = os.path.join(pos_dir, doc_id[:14].lower(), doc_id + ".txt")
+        with open(pos_path, "r") as f:
+            pos = f.read().splitlines()
+        pos = [[t.split("|")[2] for t in s.split()] for s in pos]
+    else:
+        pos = None
     # Add events
     events = []
     for line in lines[event_pos + 1:]:
         if line:
-            cur_event = Event.from_text(line, entities, doc_text=content)
+            cur_event = Event.from_text(line, entities, doc_text=content, doc_pos=pos)
             # Check if current event is duplicate.
             # Since events are sorted by verb_pos,
             # we only need to look back one event.
@@ -61,15 +69,17 @@ class Document:
         self.events = events or []
 
     @classmethod
-    def from_text(cls, text, tokenized_dir=None):
+    def from_text(cls, text, tokenized_dir=None, pos_dir=None):
         """Initialize Document from text.
 
         :param text: document content
         :type text: str
         :param tokenized_dir: raw text (tokenized) directory
         :type tokenized_dir: str
+        :param pos_dir: pos tag directory
+        :type pos_dir: str
         """
-        doc_id, entities, events = _parse_document(text, tokenized_dir)
+        doc_id, entities, events = _parse_document(text, tokenized_dir, pos_dir)
         return cls(doc_id, entities, events)
 
     def get_chain_for_entity(self, entity, end_pos=None, duplicate=False, stoplist=None):
@@ -124,13 +134,14 @@ class Document:
         return result
 
 
-def _parse_question(text, entities, doc_id, tokenized_dir=None):
+def _parse_question(text, entities, doc_id, tokenized_dir=None, pos_dir=None):
     """Parse question.
 
     :param text: question text
     :param entities: entity list of the document
     :param doc_id: document id
     :param tokenized_dir: raw text directory
+    :param pos_dir:
     :return: entity, context, choices, target
     """
     lines = text.splitlines()
@@ -144,7 +155,16 @@ def _parse_question(text, entities, doc_id, tokenized_dir=None):
         raw_path = os.path.join(tokenized_dir, doc_id[:14].lower(), doc_id + ".txt")
         with open(raw_path, "r") as f:
             content = f.read().splitlines()
-    context = [Event.from_text(e, entities, doc_text=content)
+    # Read pos tag if pos_dir is given
+    if pos_dir is not None:
+        pos_path = os.path.join(pos_dir, doc_id[:14].lower(), doc_id + ".txt")
+        with open(pos_path, "r") as f:
+            pos = f.read().splitlines()
+        pos = [[t.split("|")[2] for t in s.split()] for s in pos]
+    else:
+        pos = None
+    # Context
+    context = [Event.from_text(e, entities, doc_text=content, doc_pos=pos)
                for e in lines[context_pos + 1:choices_pos - 1] if e]
     choices = [Event.from_text(e, entities)
                for e in lines[choices_pos + 1:target_pos - 1] if e]
@@ -167,13 +187,15 @@ class TestDocument(Document):
         self.target = target
 
     @classmethod
-    def from_text(cls, text, tokenized_dir=None):
+    def from_text(cls, text, tokenized_dir=None, pos_dir=None):
         """"Content should first be split into question part and document part.
 
         :param text: text to be processed.
         :type text: str
         :param tokenized_dir: raw text directory
         :type tokenized_dir: str
+        :param pos_dir: pos directory
+        :type pos_dir: str
         """
         # Split lines
         lines = text.splitlines()
@@ -181,10 +203,10 @@ class TestDocument(Document):
         document_pos = lines.index("Document:")
         # Parse document part
         document_part = "\n".join(lines[document_pos+1:])
-        doc_id, entities, events = _parse_document(document_part, tokenized_dir)
+        doc_id, entities, events = _parse_document(document_part, tokenized_dir, pos_dir)
         # Parse question part
         question_part = "\n".join(lines[:document_pos])
-        entity, context, choices, target = _parse_question(question_part, entities, doc_id, tokenized_dir)
+        entity, context, choices, target = _parse_question(question_part, entities, doc_id, tokenized_dir, pos_dir)
         return cls(doc_id, entities, events, entity, context, choices, target)
 
     def get_question(self):
@@ -202,7 +224,8 @@ def document_iterator(corp_dir,
                       tokenized_dir=None,
                       file_type="tar",
                       doc_type="train",
-                      shuffle=False):
+                      shuffle=False,
+                      pos_dir=None):
     """Iterator of documents."""
     # Check file_type
     assert file_type in ["tar", "txt"], "Only accept tar/txt as file_type!"
@@ -219,9 +242,9 @@ def document_iterator(corp_dir,
             with open(fpath, "r") as f:
                 content = f.read()
             if doc_type == "train":
-                yield Document.from_text(content, tokenized_dir)
+                yield Document.from_text(content, tokenized_dir, pos_dir)
             else:   # doc_type == "eval"
-                yield TestDocument.from_text(content, tokenized_dir)
+                yield TestDocument.from_text(content, tokenized_dir, pos_dir)
     else:   # file_type == "tar"
         for fn in fn_list:
             fpath = os.path.join(corp_dir, fn)
@@ -232,9 +255,9 @@ def document_iterator(corp_dir,
                 for member in members:
                     content = f.extractfile(member).read().decode("utf-8")
                     if doc_type == "train":
-                        yield Document.from_text(content, tokenized_dir)
+                        yield Document.from_text(content, tokenized_dir, pos_dir)
                     else:
-                        yield TestDocument.from_text(content, tokenized_dir)
+                        yield TestDocument.from_text(content, tokenized_dir, pos_dir)
 
 
 __all__ = ["Document", "TestDocument", "document_iterator"]

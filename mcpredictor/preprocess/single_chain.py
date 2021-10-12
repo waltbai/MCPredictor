@@ -8,10 +8,10 @@ from copy import copy
 from tqdm import tqdm
 from transformers import AutoTokenizer, BertTokenizerFast
 
-from sent_event_prediction.preprocess.negative_pool import load_negative_pool
-from sent_event_prediction.preprocess.stop_event import load_stop_event
-from sent_event_prediction.preprocess.word_dict import load_word_dict
-from sent_event_prediction.utils.document import document_iterator
+from mcpredictor.preprocess.negative_pool import load_negative_pool
+from mcpredictor.preprocess.stop_event import load_stop_event
+from mcpredictor.preprocess.word_dict import load_word_dict
+from mcpredictor.utils.document import document_iterator
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,35 @@ def generate_mask_list(chain):
     return masked_list
 
 
+def align_pos_to_token(words, pos, tokenizer):
+    """Align pos tagging to bert tokenized result."""
+    inputs = tokenizer(words,
+                       is_split_into_words=True,
+                       return_offsets_mapping=True,
+                       padding="max_length",
+                       truncation=True,
+                       max_length=50)
+    input_ids = inputs.pop("input_ids")
+    attention_mask = inputs.pop("attention_mask")
+    offset_mapping = inputs.pop("offset_mapping")
+    tag_index = 0
+    cur_tag = "O"
+    aligned_pos = []
+    for offset in offset_mapping:
+        if offset[0] == 0 and offset[1] != 0 and tag_index < len(pos):
+            # Begin of a new word
+            cur_tag = pos[tag_index]
+            tag_index += 1
+            aligned_pos.append(cur_tag)
+        elif offset[0] == 0 and offset[1] == 0 or tag_index >= len(pos):
+            # Control tokens
+            aligned_pos.append("O")
+        else:
+            # Subword
+            aligned_pos.append(cur_tag)
+    return input_ids, attention_mask, aligned_pos
+
+
 def make_sample(protagonist,
                 context,
                 choices,
@@ -80,14 +109,16 @@ def make_sample(protagonist,
                 word_dict,
                 tokenizer):
     """Make sample."""
-    events = []
-    sents = []
-    masks = []
+    sample_event = []
+    sample_sent = []
+    sample_mask = []
+    sample_pos = []
     for choice_id, choice in enumerate(choices):
         # chain = context + [choice]
-        chain_events = []
+        chain_event = []
         chain_sent = []
         chain_mask = []
+        chain_pos = []
         mask_list = generate_mask_list(context)
         # Context
         for event in context:
@@ -96,33 +127,36 @@ def make_sample(protagonist,
                 predicate_gr = "{}:{}".format(verb, role)
                 # Convert sentence
                 tmp_mask_list = mask_list.difference(event.get_words())
-                sent = event.tagged_sent(role, mask_list=tmp_mask_list)
+                sent, pos = event.tagged_sent(role, mask_list=tmp_mask_list)
             else:
                 predicate_gr = subj = obj = iobj = "None"
-                sent = ""
+                sent, pos = [], []
             # Convert event
             tmp = [predicate_gr, subj, obj, iobj]
             tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
-            chain_events.append(tmp)
-            sent_input = tokenizer(sent, padding="max_length", max_length=50, truncation=True)
-            chain_sent.append(sent_input["input_ids"])
-            chain_mask.append(sent_input["attention_mask"])
+            chain_event.append(tmp)
+            input_ids, attention_mask, aligned_pos = align_pos_to_token(sent, pos, tokenizer)
+            chain_sent.append(input_ids)
+            chain_mask.append(attention_mask)
+            chain_pos.append(aligned_pos)
         # Choice
         verb, subj, obj, iobj, role = choice.tuple(protagonist)
         predicate_gr = "{}:{}".format(verb, role)
         tmp = [predicate_gr, subj, obj, iobj]
         tmp = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
-        chain_events.append(tmp)
+        chain_event.append(tmp)
         # Add to sample
-        events.append(chain_events)
-        sents.append(chain_sent)
-        masks.append(chain_mask)
-    return events, sents, masks, target
+        sample_event.append(chain_event)
+        sample_sent.append(chain_sent)
+        sample_mask.append(chain_mask)
+        sample_pos.append(chain_pos)
+    return sample_event, sample_sent, sample_mask, sample_pos, target
 
 
 def generate_single_train(corp_dir,
                           work_dir,
                           tokenized_dir,
+                          pos_dir,
                           part_size=200000,
                           file_type="tar",
                           context_size=8,
@@ -132,6 +166,7 @@ def generate_single_train(corp_dir,
     :param corp_dir: train corpus directory
     :param work_dir: workspace directory
     :param tokenized_dir: tokenized raw text directory
+    :param pos_dir: pos tagging directory
     :param part_size: size of each partition
     :param file_type: "tar" or "txt"
     :param context_size: length of the context chain
@@ -160,6 +195,7 @@ def generate_single_train(corp_dir,
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
+                                         pos_dir=pos_dir,
                                          file_type=file_type,
                                          doc_type="train"):
                 for protagonist, chain in doc.get_chains(stoplist):
@@ -209,6 +245,7 @@ def generate_single_train(corp_dir,
 def generate_single_eval(corp_dir,
                          work_dir,
                          tokenized_dir,
+                         pos_dir,
                          mode="dev",
                          file_type="txt",
                          context_size=8,
@@ -231,6 +268,7 @@ def generate_single_eval(corp_dir,
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
+                                         pos_dir=pos_dir,
                                          file_type=file_type,
                                          doc_type="eval"):
                 protagonist = doc.entity

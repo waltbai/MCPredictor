@@ -5,7 +5,7 @@ from collections import Counter
 
 from tqdm import tqdm
 
-from sent_event_prediction.utils.document import document_iterator
+from mcpredictor.utils.document import document_iterator
 
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ import argparse
 def parse_args():
     """Parse input arguments."""
     # Load config files
-    parser = argparse.ArgumentParser(prog="SentEventPrediction")
+    parser = argparse.ArgumentParser(prog="MCPredictor")
     # Set basic arguments
     parser.add_argument("--data_dir", default="/home/jinxiaolong/bl/data/gandc16",
                         type=str, help="MCNC corpus directory")

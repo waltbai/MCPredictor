@@ -11,8 +11,8 @@ from torch.utils import data
 from tqdm import tqdm
 from transformers import AdamW
 
-from sent_event_prediction.models.basic_model import BasicModel
-from sent_event_prediction.models.multi_chain_sent.network import MCPredictorSent
+from mcpredictor.models.basic_model import BasicModel
+from mcpredictor.models.multi_chain_sent.network import MCPredictorSent
 
 
 class MCSDataset(data.Dataset):
@@ -139,7 +139,7 @@ class MultiChainSentModel(BasicModel):
                 sum(batch_loss) / len(batch_loss)))
             self._logger.info("Best evaluation accuracy: {:.2%}".format(best_performance))
 
-    def evaluate(self, eval_set=None, verbose=True):
+    def evaluate(self, eval_set=None, verbose=True, return_result=False):
         """Evaluate."""
         # Get hyper-parameters
         work_dir = self._work_dir
@@ -156,6 +156,7 @@ class MultiChainSentModel(BasicModel):
         model = self._model
         model.eval()
         tot, acc = 0, 0
+        result = []
         with torch.no_grad():
             for events, sents, masks, target in eval_loader:
                 events = events.to(device)
@@ -168,9 +169,14 @@ class MultiChainSentModel(BasicModel):
                                  sent_mask=masks)
                 else:
                     pred = model(events=events)
+                result.append(pred.argmax(1).cpu())
                 acc += pred.argmax(1).eq(target).sum().item()
                 tot += len(events)
+        result = torch.cat(result, dim=0).numpy()
         accuracy = acc / tot
         if verbose:
             self._logger.info("Evaluation accuracy: {:.2%}".format(accuracy))
-        return accuracy
+        if return_result:
+            return accuracy, result
+        else:
+            return accuracy

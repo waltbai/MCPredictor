@@ -3,7 +3,7 @@ from pprint import pprint
 
 from tqdm import tqdm
 
-from sent_event_prediction.utils.document import document_iterator
+from mcpredictor.utils.document import document_iterator
 
 if __name__ == "__main__":
     # corp_dir = "/home/jinxiaolong/bl/data/gandc16/gigaword-nyt/rich_docs/training"

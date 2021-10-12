@@ -6,12 +6,12 @@ import random
 from tqdm import tqdm
 from transformers import BertTokenizerFast
 
-from sent_event_prediction.preprocess.negative_pool import load_negative_pool
-from sent_event_prediction.preprocess.single_chain import negative_sampling
-from sent_event_prediction.preprocess.stop_event import load_stop_event
-from sent_event_prediction.preprocess.word_dict import load_word_dict
-from sent_event_prediction.utils.document import document_iterator
-from sent_event_prediction.utils.entity import Entity
+from mcpredictor.preprocess.negative_pool import load_negative_pool
+from mcpredictor.preprocess.single_chain import negative_sampling, align_pos_to_token
+from mcpredictor.preprocess.stop_event import load_stop_event
+from mcpredictor.preprocess.word_dict import load_word_dict
+from mcpredictor.utils.document import document_iterator
+from mcpredictor.utils.entity import Entity
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,12 @@ def make_sample(doc,
     sample_event = []
     sample_sent = []
     sample_mask = []
+    sample_pos = []
     for choice in choices:
         choice_event = []
         choice_sent = []
         choice_mask = []
+        choice_pos = []
         for choice_role in ["subject", "object", "iobject"]:
             protagonist = choice[choice_role]
             # Get chain by protagonist
@@ -54,6 +56,7 @@ def make_sample(doc,
             chain_event = []
             chain_sent = []
             chain_mask = []
+            chain_pos = []
             if isinstance(protagonist, Entity):
                 p_head = protagonist["head"]
             else:
@@ -63,16 +66,17 @@ def make_sample(doc,
                     verb, subj, obj, iobj, role = event.tuple(protagonist)
                     predicate_gr = "{}:{}".format(verb, role) if protagonist != "None" else "None"
                     tmp_mask_list = mask_list.difference(event.get_words())
-                    sent = event.tagged_sent(role, mask_list=tmp_mask_list)
+                    sent, pos = event.tagged_sent(role, mask_list=tmp_mask_list)
                 else:
                     predicate_gr = subj = obj = iobj = "None"
-                    sent = ""
+                    sent, pos = [], []
                 tmp = [predicate_gr, subj, obj, iobj]
                 event_input = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
-                sent_input = tokenizer(sent, padding="max_length", max_length=50, truncation=True)
+                input_ids, attention_mask, aligned_pos = align_pos_to_token(sent, pos, tokenizer)
                 chain_event.append(event_input)
-                chain_sent.append(sent_input["input_ids"])
-                chain_mask.append(sent_input["attention_mask"])
+                chain_sent.append(input_ids)
+                chain_mask.append(attention_mask)
+                chain_pos.append(aligned_pos)
             # Choice event
             verb, subj, obj, iobj, role = choice.tuple(protagonist)
             predicate_gr = "{}:{}".format(verb, role) if protagonist != "None" else "None"
@@ -83,15 +87,18 @@ def make_sample(doc,
             choice_event.append(chain_event)
             choice_sent.append(chain_sent)
             choice_mask.append(chain_mask)
+            choice_pos.append(chain_pos)
         sample_event.append(choice_event)
         sample_sent.append(choice_sent)
         sample_mask.append(choice_mask)
-    return sample_event, sample_sent, sample_mask, target
+        sample_pos.append(choice_pos)
+    return sample_event, sample_sent, sample_mask, sample_pos, target
 
 
 def generate_multi_train(corp_dir,
                          work_dir,
                          tokenized_dir,
+                         pos_dir,
                          part_size=100000,
                          file_type="tar",
                          context_size=8,
@@ -101,6 +108,7 @@ def generate_multi_train(corp_dir,
     :param corp_dir: train corpus directory
     :param work_dir: workspace directory
     :param tokenized_dir: tokenized raw text directory
+    :param pos_dir: pos tagging directory
     :param part_size: size of each partition
     :param file_type: "tar" or "txt"
     :param context_size: length of the context chain
@@ -129,6 +137,7 @@ def generate_multi_train(corp_dir,
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
+                                         pos_dir=pos_dir,
                                          file_type=file_type,
                                          doc_type="train"):
                 for protagonist, chain in doc.get_chains(stoplist):
@@ -180,6 +189,7 @@ def generate_multi_train(corp_dir,
 def generate_multi_eval(corp_dir,
                         work_dir,
                         tokenized_dir,
+                        pos_dir,
                         mode="dev",
                         file_type="txt",
                         context_size=8,
@@ -202,6 +212,7 @@ def generate_multi_eval(corp_dir,
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
+                                         pos_dir=pos_dir,
                                          file_type=file_type,
                                          doc_type="eval"):
                 # protagonist = doc.entity

@@ -9,8 +9,8 @@ from torch.utils import data
 from tqdm import tqdm
 from transformers import AdamW
 
-from sent_event_prediction.models.basic_model import BasicModel
-from sent_event_prediction.models.single_chain.network import SCPredictorSent
+from mcpredictor.models.basic_model import BasicModel
+from mcpredictor.models.single_chain.network import SCPredictorSent
 
 
 class SCSDataset(data.Dataset):
