@@ -41,7 +41,7 @@ def make_sample(doc,
         choice_event = []
         choice_sent = []
         choice_mask = []
-        choice_pos = []
+        # choice_pos = []
         for choice_role in ["subject", "object", "iobject"]:
             protagonist = choice[choice_role]
             # Get chain by protagonist
@@ -56,7 +56,7 @@ def make_sample(doc,
             chain_event = []
             chain_sent = []
             chain_mask = []
-            chain_pos = []
+            # chain_pos = []
             if isinstance(protagonist, Entity):
                 p_head = protagonist["head"]
             else:
@@ -66,17 +66,20 @@ def make_sample(doc,
                     verb, subj, obj, iobj, role = event.tuple(protagonist)
                     predicate_gr = "{}:{}".format(verb, role) if protagonist != "None" else "None"
                     tmp_mask_list = mask_list.difference(event.get_words())
-                    sent, pos = event.tagged_sent(role, mask_list=tmp_mask_list)
+                    # sent, pos = event.tagged_sent(role, mask_list=tmp_mask_list)
+                    sent = event.tagged_sent(role, mask_list=tmp_mask_list)
                 else:
                     predicate_gr = subj = obj = iobj = "None"
-                    sent, pos = [], []
+                    # sent, pos = [], []
+                    sent = []
                 tmp = [predicate_gr, subj, obj, iobj]
                 event_input = [word_dict[w] if w in word_dict else word_dict["None"] for w in tmp]
-                input_ids, attention_mask, aligned_pos = align_pos_to_token(sent, pos, tokenizer)
+                # input_ids, attention_mask, aligned_pos = align_pos_to_token(sent, pos, tokenizer)
+                input_ids, attention_mask = align_pos_to_token(sent, tokenizer)
                 chain_event.append(event_input)
                 chain_sent.append(input_ids)
                 chain_mask.append(attention_mask)
-                chain_pos.append(aligned_pos)
+                # chain_pos.append(aligned_pos)
             # Choice event
             verb, subj, obj, iobj, role = choice.tuple(protagonist)
             predicate_gr = "{}:{}".format(verb, role) if protagonist != "None" else "None"
@@ -87,18 +90,20 @@ def make_sample(doc,
             choice_event.append(chain_event)
             choice_sent.append(chain_sent)
             choice_mask.append(chain_mask)
-            choice_pos.append(chain_pos)
+            # choice_pos.append(chain_pos)
         sample_event.append(choice_event)
         sample_sent.append(choice_sent)
         sample_mask.append(choice_mask)
-        sample_pos.append(choice_pos)
-    return sample_event, sample_sent, sample_mask, sample_pos, target
+        # sample_pos.append(choice_pos)
+    # Adding pos makes a lot of changes, ignore it.
+    # return sample_event, sample_sent, sample_mask, sample_pos, target
+    return sample_event, sample_sent, sample_mask, target
 
 
 def generate_multi_train(corp_dir,
                          work_dir,
                          tokenized_dir,
-                         pos_dir,
+                         # pos_dir,
                          part_size=100000,
                          file_type="tar",
                          context_size=8,
@@ -137,7 +142,7 @@ def generate_multi_train(corp_dir,
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
-                                         pos_dir=pos_dir,
+                                         # pos_dir=pos_dir,
                                          file_type=file_type,
                                          doc_type="train"):
                 for protagonist, chain in doc.get_chains(stoplist):
@@ -189,7 +194,7 @@ def generate_multi_train(corp_dir,
 def generate_multi_eval(corp_dir,
                         work_dir,
                         tokenized_dir,
-                        pos_dir,
+                        # pos_dir,
                         mode="dev",
                         file_type="txt",
                         context_size=8,
@@ -212,7 +217,7 @@ def generate_multi_eval(corp_dir,
         with tqdm() as pbar:
             for doc in document_iterator(corp_dir=corp_dir,
                                          tokenized_dir=tokenized_dir,
-                                         pos_dir=pos_dir,
+                                         # pos_dir=pos_dir,
                                          file_type=file_type,
                                          doc_type="eval"):
                 # protagonist = doc.entity
