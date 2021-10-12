@@ -5,7 +5,7 @@ Information for Script Event Prediction", EMNLP 2021
 ## 1. Corpus
 Corpus can be found in LDC: 
 https://catalog.ldc.upenn.edu/LDC2005T12 ,
-since this dataset use documents from year 1997 to 2004, please use at least the second edition.
+since this dataset use documents from year 1994 to 2004, please use at least the second edition.
 
 ## 2. MCNC dataset
 MCNC dataset processing code can be found here: 
@@ -61,6 +61,8 @@ project root directory.
 
 Using ```pip install -r requirements.txt``` to
 install dependencies.
+
+Be sure to use python>=3.6 environment.
 
 ## 3. Preprocess
 Use command ```experiments/preprocess.py``` to preprocess data.
