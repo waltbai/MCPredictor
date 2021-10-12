@@ -16,6 +16,7 @@ Please use python2.7 environment to run this code.
 Please follow bin/event_pipeline/rich_docs/gigaword.txt to construct the dataset.
 
 ### 2.1 Modification of Granroth-Wilding's code
+Please let me know if I forget any changes.
 
 #### 2.1.1 modify ```bin/run```
 Since some computer run in other languages, which may raise error
@@ -72,14 +73,14 @@ Following arguments should be specified:
 
 ## 4. Training
 ### train mcpredictor:
-```python experiments/train.py --work_dir <work_dir> --model_config config/mcpredictor.json --multi```
+```python experiments/train.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --multi```
 
 ### train scpredictor:
-```python experiments/train.py --work_dir <work_dir> --model_config config/scpredictor.json```
+```python experiments/train.py --work_dir <work_dir> --model_config config/scpredictor-sent.json```
 
 ## 5. Testing
 ### test mcpredictor:
-```python experiments/test.py --work_dir <work_dir> --model_config config/mcpredictor.json --multi```
+```python experiments/test.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --multi```
 
 ### test scpredictor:
-```python experiments/test.py --work_dir <work_dir> --model_config config/scpredictor.json```
+```python experiments/test.py --work_dir <work_dir> --model_config config/scpredictor-sent.json```
