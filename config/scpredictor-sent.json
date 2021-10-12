@@ -1,0 +1,20 @@
+{
+  "model_name": "scpredictor-sent-full",
+  "sequence_model": "transformer",
+  "score": "euclidean",
+  "attention": "scaled-dot",
+  "vocab_size": 31037,
+  "embedding_size": 300,
+  "seq_len": 8,
+  "mention_len": 30,
+  "event_repr_size": 128,
+  "dim_feedforward": 1024,
+  "num_layers": 2,
+  "num_heads": 16,
+  "dropout": 0.1,
+  "lr": 1e-3,
+  "batch_size": 200,
+  "npoch": 30,
+  "interval": 250,
+  "use_sent": true
+}
