@@ -35,7 +35,7 @@ It is recommended to use lxml engine in BeautifulSoup:
 ```soup = BeautifulSoup(xml_data, "lxml")```
 
 #### 2.1.3 modify directories
-Data directories in following files should be changed to user directory:
+Data directories in following files should be changed to user's data directory:
 - ```bin/event_pipeline/config/gigaword-nyt```
 - ```bin/event_pipeline/rich_docs/gigaword.txt```
 - ```bin/entity_narrative/eval/experiments/generate_sample.sh```
