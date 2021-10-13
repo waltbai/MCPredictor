@@ -53,7 +53,7 @@ Stanford-postagger: https://nlp.stanford.edu/software/stanford-postagger-full-20
 
 #### 2.1.6 extract tokenized documents
 Since original texts are needed,
-"tokenized.tar.gz" should be decompressed 
+```<data-dir>/gigaword-nyt/tokenized.tar.gz``` should be decompressed 
 into the same directory.
 
 ## 3. Installation
