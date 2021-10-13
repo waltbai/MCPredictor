@@ -63,7 +63,7 @@ project root directory.
 Using ```pip install -r requirements.txt``` to
 install dependencies.
 
-Be sure to use python>=3.6 environment.
+Environment: python>=3.6.
 
 ## 4. Preprocess
 Use command ```experiments/preprocess.py``` to preprocess data.
