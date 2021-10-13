@@ -60,7 +60,7 @@ into the same directory.
 Use command ```pip install -e .``` in 
 project root directory.
 
-Using ```pip install -r requirements.txt``` to
+Use command ```pip install -r requirements.txt``` to
 install dependencies.
 
 Environment: python>=3.6.
