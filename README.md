@@ -13,7 +13,7 @@ https://mark.granroth-wilding.co.uk/papers/what_happens_next/ .
 
 Please use python2.7 environment to run this code.
 
-Please follow bin/event_pipeline/rich_docs/gigaword.txt to construct the dataset.
+Please follow ```bin/event_pipeline/rich_docs/gigaword.txt``` to construct the dataset.
 
 ### 2.1 Modification of Granroth-Wilding's code
 Please let me know if I forget any changes.
