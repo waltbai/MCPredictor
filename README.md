@@ -1,7 +1,7 @@
 # MCPredictor
 Experiment code for:
 
-Long Bai, Saiping Guan, Jiafeng Guo, Zixuan Li, Xiaolong Jin, Xueqi Cheng,
+Long Bai, Saiping Guan, Jiafeng Guo, Zixuan Li, Xiaolong Jin, and Xueqi Cheng.
 "*Integrating Deep Event-Level and Script-Level Information for Script Event Prediction*", EMNLP 2021
 
 
