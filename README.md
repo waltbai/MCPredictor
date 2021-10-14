@@ -73,7 +73,7 @@ Following arguments should be specified:
 
 On my working platform, It takes about 7 hours to generate the single chain train set, 
 and takes about 10 hours to generate the multi chain train set.
-Please make sure the process will not be interrupted. 
+Please make sure that the process will not be interrupted. 
 
 ## 5. Training
 ### train mcpredictor:
