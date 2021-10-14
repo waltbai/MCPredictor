@@ -71,6 +71,10 @@ Following arguments should be specified:
 - ```--data_dir```: the directory of MCNC dataset
 - ```--work_dir```: the directory of temp data and results
 
+On my working platform, It takes about 7 hours to generate the single chain train set, 
+and takes about 10 hours to generate the multi chain train set.
+Please make sure the process will not be interrupted. 
+
 ## 5. Training
 ### train mcpredictor:
 ```python experiments/train.py --work_dir <work_dir> --model_config config/mcpredictor-sent.json --device cuda:0 --multi```
