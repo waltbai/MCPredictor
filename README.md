@@ -1,6 +1,9 @@
 # MCPredictor
-Experiment code for "*Integrating Deep Event-Level and Script-Level 
-Information for Script Event Prediction*", EMNLP 2021
+Experiment code for:
+
+Long Bai, Saiping Guan, Jiafeng Guo, Zixuan Li, Xiaolong Jin, Xueqi Cheng,
+"*Integrating Deep Event-Level and Script-Level Information for Script Event Prediction", EMNLP 2021
+
 
 ## 1. Corpus
 Corpus can be found in LDC: 
