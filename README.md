@@ -7,7 +7,7 @@ Long Bai, Saiping Guan, Jiafeng Guo, Zixuan Li, Xiaolong Jin, and Xueqi Cheng.
 
 ## 1. Corpus
 Corpus can be found in LDC: 
-https://catalog.ldc.upenn.edu/LDC2005T12 ,
+https://catalog.ldc.upenn.edu/LDC2011T07 ,
 since this dataset use documents from year 1994 to 2004, please use at least the second edition.
 
 ## 2. MCNC dataset
