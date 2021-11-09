@@ -91,3 +91,22 @@ Please make sure that the process will not be interrupted.
 
 ### test scpredictor:
 ```python experiments/test.py --work_dir <work_dir> --model_config config/scpredictor-sent.json --device cuda:0```
+
+
+## Citation
+
+If you find the resource in this repository helpful, please cite
+
+```
+@inproceedings{bai-etal-2021-integrating,
+    title = "Integrating Deep Event-Level and Script-Level Information for Script Event Prediction",
+    author = "Bai, Long  and Guan, Saiping  and Guo, Jiafeng  and Li, Zixuan  and Jin, Xiaolong  and Cheng, Xueqi",
+    booktitle = "Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2021",
+    address = "Online and Punta Cana, Dominican Republic",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2021.emnlp-main.777",
+    pages = "9869--9878",
+}
+```
