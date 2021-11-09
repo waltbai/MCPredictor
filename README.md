@@ -93,7 +93,7 @@ Please make sure that the process will not be interrupted.
 ```python experiments/test.py --work_dir <work_dir> --model_config config/scpredictor-sent.json --device cuda:0```
 
 
-## Citation
+## 7. Citation
 
 If you find the resource in this repository helpful, please cite
 
