@@ -41,7 +41,7 @@ class SCPredictorSent(nn.Module):
         If "sents" and "target" is not None, return the sum of three losses,
         otherwise, only return the scores of 5 choices.
 
-        :param events: size(batch_size, choice_num, seq_len + 1, 5)
+        :param events: size(batch_size, choice_num, seq_len + 1, 4)
         :param sents: size(batch_size, choice_num, seq_len, sent_len)
         :param sent_mask: size(batch_size, choice_num, seq_len, sent_len)
         :param target:
