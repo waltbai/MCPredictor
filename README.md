@@ -69,7 +69,7 @@ install dependencies.
 Environment: python>=3.6.
 
 ## 4. Preprocess
-Use command ```experiments/preprocess.py``` to preprocess data.
+Use command ```python experiments/preprocess.py --data_dir <data_dir> --work_dir <work_dir>``` to preprocess data.
 Following arguments should be specified:
 - ```--data_dir```: the directory of MCNC dataset
 - ```--work_dir```: the directory of temp data and results
