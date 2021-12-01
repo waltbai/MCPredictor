@@ -56,29 +56,23 @@ Stanford-postagger: https://nlp.stanford.edu/software/stanford-postagger-full-20
 
 #### 2.1.6 extract tokenized documents
 Since original texts are needed,
-```<data-dir>/gigaword-nyt/tokenized.tar.gz``` should be decompressed 
+```<data_dir>/gigaword-nyt/tokenized.tar.gz``` should be decompressed 
 into the same directory.
+Replace ```<data_dir>``` with the place you want to store the extracted data.
 
-#### 2.1.7 Build java files
-Create a build directory:
+#### 2.1.7 build java files
+Change directory to the root of this code, then:
 ```bash
 mkdir build
-cd build
-vi build.sh
+javac -classpath <code_root>/build:<code_root>/src/main/java:<code_root>/lib/* -d build/ src/main/java/cam/whim/opennlp/Tokenize.java
+javac -classpath <code_root>/build:<code_root>/src/main/java:<code_root>/lib/* -d build/ src/main/java/cam/whim/opennlp/Parse.java
+javac -classpath <code_root>/build:<code_root>/src/main/java:<code_root>/lib/* -d build/ src/main/java/cam/whim/opennlp/StreamEntitiesExtractor.java
+javac -classpath <code_root>/build:<code_root>/src/main/java:<code_root>/lib/* -d build/ src/main/java/cam/whim/opennlp/Coreference.java
+javac -classpath <code_root>/build:<code_root>/src/main/java:<code_root>/lib/* -d build/ src/main/java/cam/whim/opennlp/Tokenize.java
 ```
+Replace ```<code_root>``` with the absolute path of the root of this code.
 
-Content in ```build.sh```:
-```bash
-cd <code_root>/src/main/java/cam/whim/opennlp
-javac -Djava.ext.dirs=<code_root>/lib -d <code_root>/build *.java
-cd <code_root>/src/main/java/cam/whim/narrative/chambersJurafsky
-javac -Djava.ext.dirs=<code_root>/lib -d <code_root>/build *.java
-cd <code_root>/src/main/java/cam/whim/coreference/simple
-javac -Djava.ext.dirs=<code_root>/lib -d <code_root>/build *.java
-cd <code_root>/src/main/java/cam/whim/coreference
-javac -Djava.ext.dirs=<code_root>/lib -classpath <code_root>/build -d <code_root>/build *.java
-```
-
+Notice: if you want to run PMI (i.e., Chambers and Jurafsky, 2008), please also build java files in ```src/main/java/cam/whim/narrative/chambersJurafsky```.
 
 ## 3. Installation
 Use command ```pip install -e .``` in 
