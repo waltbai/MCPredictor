@@ -59,6 +59,27 @@ Since original texts are needed,
 ```<data-dir>/gigaword-nyt/tokenized.tar.gz``` should be decompressed 
 into the same directory.
 
+#### 2.1.7 Build java files
+Create a build directory:
+```bash
+mkdir build
+cd build
+vi build.sh
+```
+
+Content in ```build.sh```:
+```bash
+cd <code_root>/src/main/java/cam/whim/opennlp
+javac -Djava.ext.dirs=<code_root>/lib -d <code_root>/build *.java
+cd <code_root>/src/main/java/cam/whim/narrative/chambersJurafsky
+javac -Djava.ext.dirs=<code_root>/lib -d <code_root>/build *.java
+cd <code_root>/src/main/java/cam/whim/coreference/simple
+javac -Djava.ext.dirs=<code_root>/lib -d <code_root>/build *.java
+cd <code_root>/src/main/java/cam/whim/coreference
+javac -Djava.ext.dirs=<code_root>/lib -classpath <code_root>/build -d <code_root>/build *.java
+```
+
+
 ## 3. Installation
 Use command ```pip install -e .``` in 
 project root directory.
